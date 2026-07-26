@@ -1,5 +1,11 @@
 # Migration Strategy
 
+Phase 8 is the first real-site vertical slice. Old JSBox sources were audited
+for active modes, URLs, selectors, form data, OTP modes and result intent. The
+new code uses Promise operations and verified transitions. It intentionally
+does not retain insecure mail forwarding, secret logging, fixed multi-second
+synchronization, unbounded retry, or implicit final purchase.
+
 Migration no longer requires preserving JSBox source line-for-line. Functions
 may be split, signatures changed, callbacks converted to Promise, global state
 replaced, and unsuitable code rewritten or moved to native Swift when that

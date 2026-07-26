@@ -53,7 +53,7 @@ final class BrowserBridgeTests: XCTestCase {
         let container = DependencyContainer()
         let runtime = try XCTUnwrap(container.runtimeFactory.makeRuntime() as? JavaScriptRuntime)
         let health = try runtime.start()
-        XCTAssertEqual(health.phase, 7)
+        XCTAssertEqual(health.phase, 8)
         XCTAssertEqual(runtime.evaluateForTesting("typeof Native.Browser.create")?.toString(), "function")
         XCTAssertEqual(runtime.evaluateForTesting("Native.Browser.create() instanceof Promise")?.toBool(), true)
         XCTAssertEqual(runtime.evaluateForTesting("typeof PokeToolRuntime.browser.create")?.toString(), "function")

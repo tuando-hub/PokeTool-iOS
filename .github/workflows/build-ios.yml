@@ -28,6 +28,12 @@ jobs:
         run: |
           xcodebuild -showsdks | grep -E 'iphoneos18(\.|$)'
 
+      - name: Run GETOtp service tests
+        working-directory: Services/GETOtp
+        run: |
+          npm ci --ignore-scripts
+          npm test
+
       - name: Build for iOS Simulator
         run: |
           set -o pipefail

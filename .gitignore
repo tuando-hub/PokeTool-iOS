@@ -17,3 +17,7 @@ xcuserdata/
 # CI artifacts
 artifacts/
 
+# Local audit and service configuration
+.phase8-audit/
+node_modules/
+.env

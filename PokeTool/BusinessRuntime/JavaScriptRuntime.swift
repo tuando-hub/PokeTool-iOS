@@ -113,7 +113,7 @@ final class JavaScriptRuntime: BusinessRuntime {
             const executor = require('\(encodedModule)');
             return await product.runner.start(JSON.parse(\(encodedTasks)), executor);
             """,
-            timeout: 120
+            timeout: 900
         )
     }
 
@@ -151,7 +151,7 @@ final class JavaScriptRuntime: BusinessRuntime {
             );
             """
         )
-        let iterations = Int(min(max(timeout, 0.1), 120) * 10)
+        let iterations = Int(min(max(timeout, 0.1), 900) * 10)
         for _ in 0..<iterations {
             try Task.checkCancellation()
             if let result = context?.objectForKeyedSubscript(marker)?.toString(),
@@ -292,6 +292,30 @@ final class JavaScriptRuntime: BusinessRuntime {
             await storage.removePath(path);
             await storage.remove("debug.infrastructure");
             return result;
+            """,
+            timeout: 10
+        )
+    }
+
+    func runDebugPokemonSliceHarness() async throws -> String {
+        _ = try start()
+        defer { stop() }
+        return try await runAsyncTestScript(
+            """
+            const pokemon=require("/modules/pokemon/pokemon-entry");
+            const pages=require("/modules/pokemon/pokemon-pages");
+            const state={url:"https://www.pokemoncenter-online.com/login/",
+              title:"Pokemon Center Online",visible:true};
+            const browser={
+              url:async()=>state.url,title:async()=>state.title,readyState:async()=>"complete",
+              text:async()=>"",exists:async()=>state.visible,
+              query:async()=>({visible:state.visible,width:120,height:32})
+            };
+            const verification=await pages.inspect(browser,pages.pages.LOGIN);
+            return {version:pokemon.version,modes:pokemon.modes,
+              productionOTP:pokemon.capabilities.productionOTP,
+              finalPurchaseDefault:pokemon.capabilities.finalPurchaseDefault,
+              loginDescriptor:verification};
             """,
             timeout: 10
         )

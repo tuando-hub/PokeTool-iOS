@@ -100,6 +100,16 @@
     count(selector) { return this._call("count", [selector]); }
     query(selector, property) { return this._call("query", [selector, property]); }
     click(selector, options) { return this._call("click", [selector, options || null]); }
+    focus(selector) { return this._call("focus", [selector]); }
+    blur(selector) { return this._call("blur", [selector]); }
+    setValue(selector, value, options) { return this._call("setValue", [selector, value, options || null]); }
+    type(selector, text, options) { return this._call("type", [selector, text, options || null]); }
+    clear(selector) { return this._call("clear", [selector]); }
+    setChecked(selector, checked) { return this._call("setChecked", [selector, checked]); }
+    selectValue(selector, value) { return this._call("selectValue", [selector, value]); }
+    selectIndex(selector, index) { return this._call("selectIndex", [selector, index]); }
+    submit(selector) { return this._call("submit", [selector]); }
+    scrollIntoView(selector) { return this._call("scrollIntoView", [selector]); }
     waitNavigation(condition, options) { return this._call("waitNavigation", [condition, options || null]); }
     cookies(filter) { return this._call("cookies", [filter || null]); }
     screenshot(options) { return this._call("screenshot", [options || null]); }
@@ -112,7 +122,7 @@
 
   const runtime = {
     version: "0.1.0",
-    phase: 7,
+    phase: 8,
     healthCheck: function () {
       return {
         ok: true, runtime: "JavaScriptCore", phase: this.phase,

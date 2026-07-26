@@ -25,8 +25,16 @@ final class DashboardViewController: UIViewController {
         configureUI()
         bind()
         viewModel.start()
+        navigationItem.leftBarButtonItems = [
+            UIBarButtonItem(title: "RUN", style: .done, target: self, action: #selector(runPokemonTasks)),
+            UIBarButtonItem(title: "STOP", style: .plain, target: self, action: #selector(stopPokemonTasks))
+        ]
         #if DEBUG
         navigationItem.rightBarButtonItems = [
+            UIBarButtonItem(
+                title: "Pokemon", style: .plain,
+                target: self, action: #selector(runPokemonSliceTest)
+            ),
             UIBarButtonItem(
                 title: "Stop", style: .plain,
                 target: self, action: #selector(stopProductFlowTest)
@@ -55,6 +63,30 @@ final class DashboardViewController: UIViewController {
         #endif
     }
 
+    @objc private func runPokemonTasks() {
+        let alert = UIAlertController(
+            title: "Run Pokemon tasks",
+            message: "Paste a validated JSON task array. Credentials stay in memory and are not logged.",
+            preferredStyle: .alert
+        )
+        alert.addTextField { field in
+            field.placeholder = "[{\"id\":\"...\",\"mode\":\"pokemon...\"}]"
+            field.autocapitalizationType = .none
+            field.autocorrectionType = .no
+            field.isSecureTextEntry = true
+        }
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        alert.addAction(UIAlertAction(title: "Run", style: .default) { [weak self, weak alert] _ in
+            guard let json = alert?.textFields?.first?.text, !json.isEmpty else { return }
+            Task { @MainActor [weak self] in await self?.viewModel.runPokemonTasks(json: json) }
+        })
+        present(alert, animated: true)
+    }
+
+    @objc private func stopPokemonTasks() {
+        viewModel.stopPokemonTasks()
+    }
+
     #if DEBUG
     @objc private func runBridgeTest() {
         Task { @MainActor [weak self] in await self?.viewModel.runBridgeTest() }
@@ -70,6 +102,10 @@ final class DashboardViewController: UIViewController {
 
     @objc private func runInfrastructureTest() {
         Task { @MainActor [weak self] in await self?.viewModel.runInfrastructureTest() }
+    }
+
+    @objc private func runPokemonSliceTest() {
+        Task { @MainActor [weak self] in await self?.viewModel.runPokemonSliceTest() }
     }
 
     @objc private func runProductFlowTest() {

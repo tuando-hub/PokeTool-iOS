@@ -49,6 +49,29 @@ final class DashboardViewModel {
         }
     }
 
+    func runPokemonTasks(json: String) async {
+        viewState.runtimeText = "Pokemon run: validating..."
+        do {
+            let summary = try await productRuntimeService.start(
+                tasksJSON: json,
+                executorModuleID: "/modules/pokemon/pokemon-executor"
+            )
+            viewState.runtimeText =
+                "Pokemon run: total=\(summary.total) succeeded=\(summary.succeeded) " +
+                "failed=\(summary.failed) cancelled=\(summary.cancelled) " +
+                "duration=\(summary.durationMs)ms"
+            viewState.isHealthy = summary.failed == 0 && summary.cancelled == 0
+        } catch {
+            viewState.runtimeText = "Pokemon run failed: \(error.localizedDescription)"
+            viewState.isHealthy = false
+        }
+    }
+
+    func stopPokemonTasks() {
+        productRuntimeService.stop(reason: "User requested stop")
+        viewState.runtimeText = "Pokemon run: cancellation requested"
+    }
+
     #if DEBUG
     func runBridgeTest() async {
         guard let runtime = runtimeFactory.makeRuntime() as? JavaScriptRuntime else {
@@ -110,6 +133,21 @@ final class DashboardViewModel {
             viewState.isHealthy = true
         } catch {
             viewState.runtimeText = "Infrastructure Test failed: \(error.localizedDescription)"
+            viewState.isHealthy = false
+        }
+    }
+
+    func runPokemonSliceTest() async {
+        guard let runtime = runtimeFactory.makeRuntime() as? JavaScriptRuntime else {
+            viewState.runtimeText = "Pokemon Slice Test: runtime unavailable"
+            return
+        }
+        viewState.runtimeText = "Pokemon Slice Test: running..."
+        do {
+            viewState.runtimeText = "Pokemon Slice Test: \(try await runtime.runDebugPokemonSliceHarness())"
+            viewState.isHealthy = true
+        } catch {
+            viewState.runtimeText = "Pokemon Slice Test failed: \(error.localizedDescription)"
             viewState.isHealthy = false
         }
     }

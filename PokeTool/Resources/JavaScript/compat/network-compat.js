@@ -1,7 +1,7 @@
 "use strict";
 const bridge = require("./bridge-utils");
 bridge.bind("Network", ["request"]);
-const request = options => Native.Network.request(options);
+const request = options => bridge.invoke("Network", "request", [options]);
 PokeToolRuntime.network = Object.freeze({
   version: Native.Network.version,
   capabilities: () => Native.Network.capabilities(),

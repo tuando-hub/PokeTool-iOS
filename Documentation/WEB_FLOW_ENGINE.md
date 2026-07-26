@@ -1,5 +1,10 @@
 # Robust Web Flow Engine
 
+Pokemon descriptors are the first production catalog. Important states require
+URL, title and characteristic DOM signals. OTP receipt is not page success:
+registration, email confirmation and login still perform bounded destination
+verification. Final purchase is non-retryable after submission.
+
 ## Architecture
 
 ```text

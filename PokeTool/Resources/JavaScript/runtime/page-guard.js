@@ -61,8 +61,13 @@ async function selectorSignal(browser, item) {
   const state = typeof item === "string" ? "exists" : item.state || "exists";
   if (!selector) throw flowError("FLOW_PRECONDITION_FAILED", "Selector signal is invalid.");
   if (state === "visible") {
-    const snapshot = await browser.query(selector, "visibility");
-    return Boolean(snapshot && snapshot.visible && snapshot.width > 0 && snapshot.height > 0);
+    try {
+      const snapshot = await browser.query(selector, "visibility");
+      return Boolean(snapshot && snapshot.visible && snapshot.width > 0 && snapshot.height > 0);
+    } catch (error) {
+      if (["ELEMENT_NOT_FOUND","SELECTOR_NOT_FOUND"].includes(error && error.code)) return false;
+      throw error;
+    }
   }
   const exists = await browser.exists(selector);
   if (state === "gone") return !exists;

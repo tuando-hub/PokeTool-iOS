@@ -1,5 +1,21 @@
 # PokeTool iOS Architecture
 
+## Phase 8: Pokemon product slice
+
+`/modules/pokemon/pokemon-entry` sits above Product Runner and resolves six
+mode executors. Each executor owns an isolated browser, verifies Pokemon page
+descriptors through PageGuard, calls the configured OTP provider, persists a
+redacted result and destroys the browser deterministically.
+
+```text
+Dashboard -> ProductRuntimeService -> Runner -> Pokemon executor
+  -> PageGuard / Browser compatibility -> Native.Browser
+  -> OTP adapter -> Native.Network -> configured GETOtp HTTPS service
+```
+
+Runtime, Domain and Plugins remain free of UIKit/WebKit. Node is an external
+deployment boundary and is not embedded in iOS.
+
 ## Phase 7: Product Runtime and Verified Web Flows
 
 ```text

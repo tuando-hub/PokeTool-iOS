@@ -4,7 +4,7 @@ const web = require("/compat/browser-compat");
 
 let configuration = {
   stopOnError:false, continueOnRetryableFailure:true,
-  taskTimeoutMs:60000, delayBetweenTasksMs:0
+  taskTimeoutMs:600000, delayBetweenTasksMs:0
 };
 let running = false;
 let currentTask = null;
@@ -15,7 +15,7 @@ function configure(options) {
   if (running) throw core.errors.productError("INVALID_TASK", "Cannot configure a running runner.");
   const input = options || {};
   configuration = Object.assign({}, configuration, input);
-  configuration.taskTimeoutMs = Math.min(Math.max(Number(configuration.taskTimeoutMs), 100), 120000);
+  configuration.taskTimeoutMs = Math.min(Math.max(Number(configuration.taskTimeoutMs), 100), 900000);
   configuration.delayBetweenTasksMs = Math.min(Math.max(Number(configuration.delayBetweenTasksMs), 0), 10000);
   return Object.assign({}, configuration);
 }

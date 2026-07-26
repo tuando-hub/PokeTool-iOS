@@ -1,5 +1,10 @@
 # Product Runtime
 
+Phase 8 extends the sequential task model with JSON-compatible `account`,
+`input`, and `options` for the Pokemon executor. Those fields remain in memory;
+persisted Pokemon results are independently redacted. Runner cancellation
+propagates through task context and browser cleanup belongs to the executor.
+
 ## Modules
 
 ```text
