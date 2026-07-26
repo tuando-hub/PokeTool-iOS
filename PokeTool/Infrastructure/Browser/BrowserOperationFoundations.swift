@@ -36,7 +36,7 @@ final class ControlledDownloadDestinationPolicy: DownloadDestinationPolicy {
 
     init(fileManager: FileManager = .default) {
         directory = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("PokeTool/Downloads", isDirectory: true)
+            .appendingPathComponent("PokeTool/downloads", isDirectory: true)
     }
 
     func destination(suggestedFilename: String?) throws -> URL {
