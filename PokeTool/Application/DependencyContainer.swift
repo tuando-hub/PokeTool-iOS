@@ -65,7 +65,10 @@ final class DependencyContainer {
         backgroundService = BackgroundService()
         notificationService = NotificationService()
 
-        let bridgeFactory = NativeBridgeFactory(logger: logger)
+        let bridgeFactory = NativeBridgeFactory(
+            logger: logger,
+            browserManager: browserManager
+        )
         runtimeFactory = JavaScriptRuntimeFactory(
             bridgeFactory: bridgeFactory,
             logger: logger

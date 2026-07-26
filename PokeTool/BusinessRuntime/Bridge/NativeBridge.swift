@@ -42,18 +42,31 @@ final class NativeBridge: NSObject, NativeBridgeExport {
         self.Device = Device
         self.Events = Events
     }
+
+    func stop() {
+        Browser.stop()
+    }
+
+    func prepareForStart() {
+        Browser.prepareForStart()
+    }
 }
 
+@MainActor
 final class NativeBridgeFactory {
     private let logger: Logging
+    private let browserManager: BrowserManager
 
-    init(logger: Logging) {
+    init(logger: Logging, browserManager: BrowserManager) {
         self.logger = logger
+        self.browserManager = browserManager
     }
 
     func makeBridge() -> NativeBridge {
         NativeBridge(
-            Browser: BrowserBridgeNamespace(),
+            Browser: BrowserBridgeNamespace(
+                service: BrowserBridgeService(browserManager: browserManager)
+            ),
             Storage: StorageBridgeNamespace(),
             Logger: LoggerBridgeNamespace(logger: logger),
             Network: NetworkBridgeNamespace(),

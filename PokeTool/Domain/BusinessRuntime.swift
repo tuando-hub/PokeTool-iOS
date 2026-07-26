@@ -5,11 +5,13 @@ struct RuntimeHealth: Equatable {
     let phase: Int
 }
 
+@MainActor
 protocol BusinessRuntime: AnyObject {
     func start() throws -> RuntimeHealth
     func stop()
 }
 
+@MainActor
 protocol BusinessRuntimeFactory {
     func makeRuntime() -> BusinessRuntime
 }

@@ -15,6 +15,7 @@ enum JavaScriptRuntimeError: LocalizedError {
     }
 }
 
+@MainActor
 final class JavaScriptRuntime: BusinessRuntime {
     private let bridge: NativeBridge
     private let logger: Logging
@@ -27,6 +28,7 @@ final class JavaScriptRuntime: BusinessRuntime {
 
     func start() throws -> RuntimeHealth {
         stop()
+        bridge.prepareForStart()
 
         guard let context = JSContext() else {
             throw JavaScriptRuntimeError.evaluationFailed("Unable to create JSContext")
@@ -68,11 +70,19 @@ final class JavaScriptRuntime: BusinessRuntime {
     }
 
     func stop() {
+        bridge.stop()
         context?.exceptionHandler = nil
         context = nil
     }
+
+    #if DEBUG
+    func evaluateForTesting(_ source: String) -> JSValue? {
+        context?.evaluateScript(source)
+    }
+    #endif
 }
 
+@MainActor
 final class JavaScriptRuntimeFactory: BusinessRuntimeFactory {
     private let bridgeFactory: NativeBridgeFactory
     private let logger: Logging

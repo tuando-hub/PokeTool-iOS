@@ -1,5 +1,87 @@
 # PokeTool iOS Architecture
 
+## Phase 3: Browser Bridge
+
+```text
+Business JavaScript
+  -> PokeToolRuntime.browser wrapper
+  -> Native.Browser Promise ABI
+  -> BrowserBridgeNamespace / Promise registry
+  -> BrowserBridgeService
+  -> BrowserManager
+  -> Browser operation services
+  -> BrowserSession / WKWebView
+```
+
+The low-level ABI is version `1.0.0`. JavaScript passes acyclic JSON payloads
+through one native `invoke(method,payload)` boundary. `BrowserBridgeService`
+performs centralized typed decoding, resource validation, BrowserManager calls,
+result encoding and error mapping. Neither JavaScript nor the bridge receives
+BrowserPool, BrowserSession, WKWebView, UIKit objects, NSError, UIImage, Data,
+native Cookie objects, URL or Date objects.
+
+### Promise and cancellation lifecycle
+
+```text
+Created -> Registered -> Running -> Resolved / Rejected / Cancelled -> Released
+```
+
+Each call creates a real JavaScript Promise with an `operationId`. The
+MainActor-owned registry retains resolve/reject only until the first terminal
+outcome. `Native.Browser.cancelOperation(id)` cancels explicitly. Runtime stop
+cancels and rejects every pending Promise, clears the registry, then destroys
+sessions created by that runtime. Destroying a browser deterministically rejects
+an unknown ID and cancels other bridge work associated with the destroyed ID.
+
+JavaScriptCore and all JSValue access are MainActor-confined. BrowserManager is
+also MainActor-confined. Structured concurrency crosses the boundary without
+semaphores, synchronous waits, or DispatchGroup waits. Promise settlement and
+eventual JS callbacks therefore return to the context's actor.
+
+### Values and errors
+
+The JS wrapper rejects functions, symbols, bigint, cyclic values and non-finite
+numbers before native decoding. Native accepts null, Boolean, finite number,
+string, array and plain string-keyed object. Results use the same JSON domain;
+timestamps are ISO-8601 strings. BrowserValue is recursively converted without
+exposing host objects.
+
+Rejected values are normalized to JavaScript Error objects with `name`, `code`,
+`message`, `operationId`, `browserId`, `operation`, `retryable`, and safe
+`details`. Full scripts, HTML, cookie values, authorization headers, form bodies
+and sensitive values are excluded from errors and logs.
+
+### Ownership, limits, and capabilities
+
+Runtime ownership is deterministic: runtime-created sessions are destroyed on
+runtime stop. Scene/presentation sessions are not owned by the runtime.
+
+Limits include 64 pending Promises, 1,000,000-character scripts, 5,000,000-
+character HTML results, 2 MB bridge payloads, 64 headers, 32 metadata entries,
+and 100 ms–120 s timeouts. Logger messages and metadata are bounded and passed
+through native redaction.
+
+Capability detection is required. Navigation, evaluation, DOM queries, element
+interaction, cookies, website data and screenshots are exposed. Navigation
+waiting is marked `foundation`; full-content screenshots are `limited`.
+Element MutationObserver waiting, network idle, download/upload, page-storage
+keys, cookie mutation and reload-once recovery are not exposed as complete.
+
+Browser event delivery remains unavailable in this phase; the namespace is kept
+as a future pull-based boundary to avoid long-lived JS callbacks. EventBus is
+not used as a command dispatcher.
+
+### Compatibility and Phase 4 boundary
+
+Bridge API versions are independent of app versions. Minor releases are
+additive; breaking ABI changes require a major version. Code must inspect
+capabilities instead of assuming support.
+
+Phase 3 contains only bridge infrastructure and a thin developer wrapper. It
+does not contain JSBox compatibility, modes, business logic, website-specific
+selectors, retries, proxying, stealth, CAPTCHA handling, or Phase 4 runtime
+features.
+
 ## Phase 2: Native Browser Operations
 
 Phase 2 adds native-only operations; it does not add a JavaScriptCore Browser API
