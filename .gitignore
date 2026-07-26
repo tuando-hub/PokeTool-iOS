@@ -1,0 +1,19 @@
+# Xcode
+DerivedData/
+build/
+*.xcuserstate
+xcuserdata/
+*.xccheckout
+*.xcscmblueprint
+
+# Signing
+*.p12
+*.mobileprovision
+*.cer
+
+# macOS
+.DS_Store
+
+# CI artifacts
+artifacts/
+
