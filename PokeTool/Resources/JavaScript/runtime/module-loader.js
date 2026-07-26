@@ -143,8 +143,8 @@
         return requireFrom(childRequest, canonicalID, depth + 1);
       };
       localRequire.resolve = function (childRequest) { return resolve(childRequest, canonicalID); };
-      const wrapped = "(function(exports,require,module,__filename,__dirname,global,console,PokeToolRuntime,Native){\\n" +
-        sourceRecord.source + "\\n})\\n//# sourceURL=poketool://" + canonicalID.slice(1);
+      const wrapped = "(function(exports,require,module,__filename,__dirname,global,console,PokeToolRuntime,Native){\n" +
+        sourceRecord.source + "\n})\n//# sourceURL=poketool://" + canonicalID.slice(1);
       const factory = global.eval(wrapped);
       if (typeof factory !== "function") {
         throw moduleError("MODULE_COMPILE_FAILED", "Module wrapper did not compile.", request, canonicalID, "compile", parentID);
