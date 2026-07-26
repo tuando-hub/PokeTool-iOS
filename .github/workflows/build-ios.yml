@@ -59,11 +59,23 @@ jobs:
             -configuration Debug \
             -sdk iphonesimulator \
             -destination 'platform=iOS Simulator,name=iPhone 16 Pro' \
+            -parallel-testing-enabled NO \
+            -test-timeouts-enabled YES \
+            -default-test-execution-time-allowance 60 \
+            -maximum-test-execution-time-allowance 120 \
+            -resultBundlePath "$RUNNER_TEMP/PokeToolTests.xcresult" \
             CODE_SIGNING_ALLOWED=NO \
             test 2>&1 | tee "$RUNNER_TEMP/unit-tests.log"
           TEST_STATUS=${PIPESTATUS[0]}
           set -e
           if [[ "$TEST_STATUS" -ne 0 ]]; then
+            if [[ -d "$RUNNER_TEMP/PokeToolTests.xcresult" ]]; then
+              xcrun xcresulttool get test-results summary \
+                --path "$RUNNER_TEMP/PokeToolTests.xcresult" \
+                2>/dev/null \
+                | tail -60 \
+                | while IFS= read -r line; do echo "::error::$line"; done
+            fi
             MATCHES=$(grep -E '(^| )error:|:[0-9]+:[0-9]+: error:|Test Case.*failed|failed -|Async JS failed|JavaScript.*timed out|Unable to find a device' \
               "$RUNNER_TEMP/unit-tests.log" | tail -40 || true)
             if [[ -n "$MATCHES" ]]; then
