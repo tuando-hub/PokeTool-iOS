@@ -1,4 +1,5 @@
 import Foundation
+import UIKit
 import WebKit
 
 @MainActor
@@ -10,14 +11,28 @@ final class BrowserViewModel {
         self.browserManager = browserManager
     }
 
-    func webView() -> WKWebView {
+    func webView() throws -> WKWebView {
         if let browserId,
-           let webView = browserManager.presentationWebView(for: browserId) {
+           let webView = try? browserManager.presentationWebView(for: browserId) {
             return webView
         }
 
-        let id = browserManager.createBrowser(metadata: .presentation)
+        let id = try browserManager.createSession(configuration: .presentation)
         browserId = id
-        return browserManager.presentationWebView(for: id) ?? WKWebView()
+        return try browserManager.presentationWebView(for: id)
+    }
+
+    func updateViewport(
+        size: CGSize,
+        safeAreaInsets: UIEdgeInsets,
+        scale: CGFloat
+    ) {
+        guard let browserId else { return }
+        try? browserManager.updateViewport(
+            size: size,
+            safeAreaInsets: safeAreaInsets,
+            scale: scale,
+            for: browserId
+        )
     }
 }

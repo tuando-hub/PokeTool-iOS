@@ -5,6 +5,8 @@ final class DependencyContainer {
     let appStateStore: AppStateStore
     let eventBus: EventBus
     let logger: Logging
+    let browserMetrics: BrowserMetricsCollector
+    let userAgentManager: UserAgentManager
     let browserManager: BrowserManager
     let runtimeFactory: BusinessRuntimeFactory
     let fileStore: FileStore
@@ -17,7 +19,28 @@ final class DependencyContainer {
         appStateStore = AppStateStore()
         eventBus = NativeEventBus()
         logger = UnifiedLogger()
-        browserManager = BrowserManager(eventBus: eventBus, logger: logger)
+        browserMetrics = BrowserMetricsCollector()
+        userAgentManager = UserAgentManager()
+
+        let browserEventEmitter = BrowserEventEmitter(eventBus: eventBus)
+        let browserConfiguration = BrowserEngineConfiguration.default
+        let browserPool = BrowserPool(
+            maximumSessions: browserConfiguration.maximumConcurrentSessions
+        )
+        let browserSessionFactory = BrowserSessionFactory(
+            userAgentManager: userAgentManager,
+            eventEmitter: browserEventEmitter,
+            logger: logger,
+            metrics: browserMetrics
+        )
+        browserManager = BrowserManager(
+            pool: browserPool,
+            sessionFactory: browserSessionFactory,
+            userAgentManager: userAgentManager,
+            eventEmitter: browserEventEmitter,
+            metrics: browserMetrics,
+            logger: logger
+        )
         fileStore = FileStore()
         networkClient = NetworkClient()
         keychainStore = KeychainStore()

@@ -1,114 +1,351 @@
 # PokeTool iOS Architecture
 
-## Principles
+## Phase 1 scope
+
+Phase 1 implements a native Browser Engine foundation. It does not implement browser automation, website-specific behavior, selectors, runtime evaluation, or a JavaScript-facing Browser API.
+
+## Architectural principles
 
 - UIKit owns presentation.
-- View models own presentation state, not UIKit objects.
-- `BrowserManager` is the only browser entry point.
-- `BrowserPool` owns multiple `BrowserSession` objects.
-- `BrowserSession` alone owns its `WKWebView` and WebKit stores.
-- JavaScriptCore receives opaque browser identifiers only in future phases.
-- Native Bridge namespaces expose capabilities, never UIKit or WebKit objects.
-- JavaScript-facing events use the `Events` namespace and the same EventBus envelope as native publishers.
-- App services communicate through direct protocols for request/response and EventBus for cross-cutting events.
-- No global service singleton is required.
-- Core never depends on a concrete plugin.
+- View models own presentation state, not business rules.
+- `BrowserManager` is the only native entry point to the Browser Engine.
+- `BrowserPool` is private to `BrowserManager`.
+- `BrowserSession` owns its WebKit objects and session-scoped managers.
+- WebKit ownership and callbacks are isolated to `MainActor`.
+- A Browser session is referenced by `BrowserID`.
+- JavaScriptCore does not import UIKit or WebKit.
+- The Browser Bridge namespace remains empty until Phase 2.
+- EventBus carries lifecycle broadcasts, not request/response commands.
+- All services receive dependencies through `DependencyContainer`.
+- Core does not depend on concrete plugins.
 
-## Dependency graph
+## Top-level dependency graph
 
 ```text
 SceneDelegate
-  └─ DependencyContainer [scene lifetime]
-      ├─ AppStateStore [scene]
-      ├─ NativeEventBus [scene]
-      ├─ UnifiedLogger [scene]
-      ├─ BrowserManager [scene]
-      │   └─ BrowserPool [scene]
-      │       └─ BrowserSession [explicit]
-      │           ├─ WKWebView
-      │           ├─ WKWebsiteDataStore
-      │           └─ WKHTTPCookieStore
-      ├─ FileStore [scene]
-      ├─ NetworkClient [scene]
-      ├─ KeychainStore [scene]
-      ├─ NotificationService [scene]
-      └─ JavaScriptRuntimeFactory [scene]
-          └─ JavaScriptRuntime [run]
-              ├─ JSContext
-              └─ NativeBridge [run]
-                  └─ Namespaced bridge objects
+  `-- DependencyContainer [scene lifetime]
+      |-- AppStateStore
+      |-- NativeEventBus
+      |-- UnifiedLogger
+      |-- FileStore
+      |-- NetworkClient
+      |-- KeychainStore
+      |-- NotificationService
+      |-- BrowserMetricsCollector
+      |-- UserAgentManager
+      |-- BrowserSessionFactory
+      |   `-- session-scoped browser services
+      |-- BrowserManager
+      |   `-- BrowserPool [private]
+      |       `-- BrowserSession [0...N]
+      `-- JavaScriptRuntimeFactory
+          `-- JavaScriptRuntime [run lifetime]
+              |-- JSContext
+              `-- NativeBridge [Browser namespace empty]
 ```
 
 ## Layer direction
 
 ```text
-Presentation → Application → Domain
-                         ↘ Infrastructure
-BusinessRuntime → Domain + Bridge interfaces
-Plugins → Core service interfaces
+Presentation --> Application --> Domain
+                           \--> Infrastructure
 
-Core ─X→ concrete Plugins
-BusinessRuntime ─X→ UIKit
-BusinessRuntime ─X→ WebKit
-NativeBridge ─X→ UIKit/WKWebView values
+BusinessRuntime --> Domain + Bridge interfaces
+Plugins         --> Core service interfaces
+
+Core            -X-> concrete Plugins
+BusinessRuntime -X-> UIKit
+BusinessRuntime -X-> WebKit
+NativeBridge    -X-> UIKit/WKWebView values
+JavaScript      -X-> Browser Engine in Phase 1
 ```
+
+# Browser Engine
+
+## Browser dependency diagram
+
+```text
+BrowserManager
+  |-- BrowserPool
+  |   `-- [BrowserID: BrowserSession]
+  |-- BrowserSessionFactory
+  |   |-- UserAgentManager
+  |   |-- BrowserEventEmitter
+  |   |-- UnifiedLogger
+  |   `-- BrowserMetricsCollector
+  `-- BrowserMetricsCollector
+
+BrowserSession
+  |-- WKWebView
+  |-- WKProcessPool
+  |-- WKWebsiteDataStore
+  |-- WKHTTPCookieStore
+  |-- CookieManager
+  |-- StorageManager
+  |-- DownloadManager
+  |-- Navigation model
+  |-- History model
+  |-- Viewport model
+  `-- State machine
+```
+
+`BrowserPool` is never returned or injected outside Browser Engine construction. Consumers receive only `BrowserManager`.
+
+## BrowserManager
+
+`BrowserManager` is the native facade responsible for:
+
+- Creating sessions from `BrowserSessionConfiguration`.
+- Enforcing pool capacity before WebKit allocation.
+- Looking up sessions and snapshots by `BrowserID`.
+- Returning a WebView only for native presentation.
+- Updating metadata, user agent, and viewport.
+- Destroying one or all sessions.
+- Selecting cleanup policy.
+- Returning internal metrics snapshots.
+
+It contains no URL loading, JavaScript evaluation, selector, click, typing, or automation API.
+
+## BrowserPool
+
+The pool is a `MainActor`-isolated map keyed by `BrowserID`. Its default capacity is eight sessions and is configurable through `BrowserEngineConfiguration`.
+
+WebKit networking remains concurrent even though ownership mutations are serialized on `MainActor`. This prevents races in create/destroy/lookup while allowing several WebKit content processes and network loads to operate simultaneously.
+
+The default capacity is a safety boundary, not an automation concurrency decision. Later phases may tune it using device memory and observed process termination metrics.
+
+## BrowserSession
+
+Each session owns:
+
+- Stable `BrowserID`.
+- `WKWebView`.
+- Dedicated `WKProcessPool`.
+- Website data store and HTTP cookie store.
+- Browser and navigation states.
+- Current/previous URL.
+- Page title and estimated progress.
+- Native history.
+- Metadata and owner attributes.
+- User agent.
+- Viewport and safe-area metrics.
+- Cookie, storage, and download managers.
+- Session creation timestamp.
+
+The default data-store policy is `isolated`, implemented with a new non-persistent `WKWebsiteDataStore`. This prevents accidental cookie sharing between accounts. A shared persistent store must be explicitly selected.
 
 ## Browser lifecycle
 
 ```text
-BrowserManager.createBrowser(metadata, userAgent)
-  → BrowserPool allocates ownership slot
-  → BrowserSession creates WKWebView configuration and stores
-  → BrowserPool retains BrowserSession
-  → EventBus publishes browser.created
+createSession(configuration)
+  -> BrowserPool.ensureCapacity
+  -> emit Creating
+  -> BrowserSessionFactory resolves data store and user agent
+  -> BrowserSession creates WebKit objects and child managers
+  -> BrowserSession enters Idle
+  -> BrowserPool retains session
+  -> metrics register creation
+  -> emit BrowserCreated
 
-BrowserManager.destroyBrowser(browserId)
-  → BrowserPool releases mapping
-  → BrowserSession stops loading and detaches delegates
-  → EventBus publishes browser.destroyed
-  → ARC releases WebKit objects when no presentation reference remains
+destroySession(browserId, cleanupPolicy)
+  -> remove session from BrowserPool
+  -> enter Stopping
+  -> stop current WebKit load
+  -> cancel tracked downloads
+  -> optionally clear cookies and website data
+  -> invalidate observations and detach delegates
+  -> enter Destroyed
+  -> metrics remove active session
+  -> emit BrowserDestroyed
+  -> ARC releases objects after native presentation releases WKWebView
 ```
 
-Phase 0.5 intentionally defines no loading, evaluation, clicking, selector, or automation operation.
+Removing the session from the pool before asynchronous cleanup prevents new consumers from acquiring a stopping session.
 
-## Runtime lifecycle
+## Browser state machine
+
+```text
+Creating --> Idle
+    |          |
+    |          +--> Loading --> Interactive --> Ready
+    |                  |             |            |
+    |                  +--> Idle     +--> Idle    +--> Busy
+    |                  |             |            |
+    |                  +-------------+------------+--> Stopping
+    |                                               |
+    +-----------------------------------------------+
+                                                    v
+                                                Destroyed
+```
+
+Allowed transitions:
+
+| From | To |
+|---|---|
+| Creating | Idle, Stopping |
+| Idle | Loading, Busy, Stopping |
+| Loading | Interactive, Ready, Idle, Stopping |
+| Interactive | Ready, Loading, Idle, Stopping |
+| Ready | Loading, Busy, Idle, Stopping |
+| Busy | Ready, Loading, Idle, Stopping |
+| Stopping | Destroyed |
+| Destroyed | none |
+
+Invalid transitions are rejected and logged as `BrowserError.invalidState`.
+
+## Navigation model
+
+`WKNavigationDelegate` and native KVO track:
+
+- Current URL.
+- Previous URL.
+- Page title.
+- Estimated loading progress.
+- Provisional, committed, completed, failed, and process-terminated states.
+- Native navigation type.
+- Load start and duration.
+- Append-only logical history with forward-history truncation support.
+
+The delegate only observes and allows native WebKit navigation. It does not initiate navigation or perform automation.
+
+## CookieManager
+
+CookieManager wraps a session's `WKHTTPCookieStore` and supports:
+
+- Export to codable `BrowserCookie` values.
+- Import from `BrowserCookie`.
+- Clear.
+- Explicit synchronization to or from `HTTPCookieStorage.shared`.
+- Cookie-change events and logging.
+
+Synchronization is never automatic because shared cookies would break account isolation.
+
+## StorageManager
+
+StorageManager uses only public native `WKWebsiteDataStore` APIs:
+
+- Inspect website data records.
+- Clear local storage.
+- Clear session storage.
+- Clear WebKit caches.
+- Clear all website data.
+- Track storage state.
+
+Local and session storage are addressed through the public `WKWebsiteDataTypeLocalStorage` and `WKWebsiteDataTypeSessionStorage` record types. No page JavaScript is evaluated.
+
+## DownloadManager
+
+DownloadManager currently owns the download model and lifecycle:
+
+```text
+Pending --> Running --> Finished
+                   \--> Failed
+Pending/Running -----> Cancelled
+```
+
+It tracks download IDs, filename, start time, progress, result, summary, and events. `WKDownloadDelegate` integration and destination policy are intentionally deferred.
+
+## UserAgentManager
+
+UserAgentManager resolves:
+
+- System default user agent (`nil` custom override).
+- A normalized custom user agent.
+
+Changes remain session-scoped and are applied through `BrowserManager`.
+
+## Browser events
+
+Browser events are converted into immutable `PlatformEvent` values:
+
+- `browser.created`
+- `browser.destroyed`
+- `browser.state.changed`
+- `browser.navigation.started`
+- `browser.navigation.committed`
+- `browser.navigation.finished`
+- `browser.navigation.failed`
+- `browser.loading.started`
+- `browser.loading.finished`
+- `browser.history.changed`
+- `browser.cookies.changed`
+- `browser.storage.changed`
+- `browser.download.started`
+- `browser.download.finished`
+- `browser.download.failed`
+- `browser.process.terminated`
+
+No event exposes a `WKWebView`, cookie-store object, or website data object.
+
+## Browser errors
+
+The typed `BrowserError` model includes:
+
+- Navigation failure.
+- Timeout.
+- Web process termination.
+- Invalid session.
+- Invalid URL.
+- Invalid state transition.
+- Pool capacity exceeded.
+- Cookie failure.
+- Storage failure.
+- Download failure.
+- Unknown failure.
+
+Errors preserve native codes/messages without introducing website-specific semantics.
+
+## Browser metrics
+
+Internal metrics include:
+
+- Active session count.
+- Total sessions created.
+- Session creation duration.
+- Last and total load duration.
+- Navigation count.
+- Web content process termination count.
+- Memory available to the current process.
+
+Metrics are not exposed to JavaScript. They exist for capacity tuning and diagnostics.
+
+# Runtime lifecycle
 
 ```text
 JavaScriptRuntimeFactory.makeRuntime()
-  → NativeBridgeFactory creates run-scoped namespaces
-  → JavaScriptRuntime creates one JSContext
-  → bootstrap health check
-  → runtime consumer completes
-  → stop() clears exception handler and releases JSContext
+  -> NativeBridgeFactory creates run-scoped namespaces
+  -> JavaScriptRuntime creates one JSContext
+  -> bootstrap health check
+  -> runtime consumer completes
+  -> stop() clears exception handler and releases JSContext
 ```
 
-The runtime layer imports Foundation and JavaScriptCore only. It never imports UIKit or WebKit. Future browser calls cross the Native Bridge using serialized `browserId` values.
+The runtime imports Foundation and JavaScriptCore only. The `Browser` Bridge namespace remains empty in Phase 1.
 
-## EventBus
+# EventBus and logging
 
-EventBus carries immutable `PlatformEvent` envelopes for lifecycle, diagnostics, state broadcasts, and JavaScript/native events. Direct protocol calls remain appropriate for commands that require an immediate response. EventBus must not become a hidden command dispatcher.
+EventBus carries lifecycle, diagnostics, and state broadcasts. Direct protocols remain the correct mechanism for commands that require an immediate response.
 
-## Logging
+All components depend on `Logging`. `UnifiedLogger` routes browser, runtime, bridge, network, storage, UI, plugin, and system categories to Apple Unified Logging. Sensitive metadata must be redacted before logging.
 
-All components depend on the `Logging` protocol. `UnifiedLogger` routes category-based messages to Apple Unified Logging. Categories are browser, runtime, bridge, network, storage, UI, plugin, and system. Sensitive metadata must be redacted before logging.
+# Plugin boundary
 
-## Plugin boundary
+Plugin interfaces remain declarations only. Phase 1 adds no plugin loader, registry, discovery mechanism, or implementation.
 
-Phase 0.5 defines plugin-facing contracts but no implementation. Future plugins receive `PluginContext`, restricted service resolution, EventBus, logger, and bridge access. Core does not import, discover, or instantiate concrete plugins.
-
-## Lifecycles
+# Service lifecycles
 
 | Service | Lifecycle |
 |---|---|
 | DependencyContainer | Scene |
-| AppStateStore | Scene |
-| EventBus | Scene |
-| UnifiedLogger | Scene |
-| BrowserManager/Pool | Scene |
+| EventBus / UnifiedLogger | Scene |
+| BrowserManager / BrowserPool | Scene |
+| BrowserSessionFactory | Scene |
+| BrowserMetricsCollector | Scene |
+| UserAgentManager | Scene |
 | BrowserSession | Explicit create/destroy |
-| File/Network/Keychain services | Scene |
-| JavaScriptRuntimeFactory | Scene |
-| JavaScriptRuntime/JSContext | One run |
+| Cookie/Storage/Download managers | BrowserSession |
+| WKWebView / WebKit stores | BrowserSession |
+| JavaScriptRuntime / JSContext | One run |
 | NativeBridge namespaces | One run |
 | ViewModel | Screen |
 | Plugin | Not implemented |

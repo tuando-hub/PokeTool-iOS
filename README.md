@@ -10,13 +10,13 @@ Native iOS browser automation platform built with UIKit, WKWebView, JavaScriptCo
 - No Storyboard
 - No SwiftUI
 
-## Phase 0.5
+## Phase 1
 
-Phase 0.5 refines the platform boundaries with BrowserManager/BrowserPool/BrowserSession ownership, namespaced Native Bridge objects, a shared EventBus, unified logging, explicit dependency lifecycles, and plugin-facing interfaces.
+Phase 1 implements the native Browser Engine foundation: multi-session ownership, lifecycle and state tracking, navigation/history observation, cookie and website-data management, download lifecycle models, session user agents, viewport state, browser events, typed errors, and internal metrics.
 
 No PokeTool business mode is included in this phase.
 
-The browser layer intentionally has no load, evaluate, click, selector, or automation API yet. See [Documentation/ARCHITECTURE.md](Documentation/ARCHITECTURE.md).
+The Browser Bridge namespace remains empty. The engine intentionally has no JavaScript-facing browser API, runtime evaluation, click, typing, selector, or website automation capability. See [Documentation/ARCHITECTURE.md](Documentation/ARCHITECTURE.md).
 
 ## Local build
 
