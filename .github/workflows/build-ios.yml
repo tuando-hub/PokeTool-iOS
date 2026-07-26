@@ -64,10 +64,14 @@ jobs:
           TEST_STATUS=${PIPESTATUS[0]}
           set -e
           if [[ "$TEST_STATUS" -ne 0 ]]; then
-            grep -E '(^| )error:|:[0-9]+:[0-9]+: error:|Test Case.*failed|failed -|Async JS failed|JavaScript.*timed out|Unable to find a device' \
-              "$RUNNER_TEMP/unit-tests.log" \
-              | tail -40 \
-              | while IFS= read -r line; do echo "::error::$line"; done
+            MATCHES=$(grep -E '(^| )error:|:[0-9]+:[0-9]+: error:|Test Case.*failed|failed -|Async JS failed|JavaScript.*timed out|Unable to find a device' \
+              "$RUNNER_TEMP/unit-tests.log" | tail -40 || true)
+            if [[ -n "$MATCHES" ]]; then
+              while IFS= read -r line; do echo "::error::$line"; done <<< "$MATCHES"
+            else
+              tail -40 "$RUNNER_TEMP/unit-tests.log" \
+                | while IFS= read -r line; do echo "::error::$line"; done
+            fi
             exit "$TEST_STATUS"
           fi
 
