@@ -1,6 +1,7 @@
 import Combine
 import Foundation
 
+@MainActor
 final class DashboardViewModel {
     struct ViewState: Equatable {
         var title = "PokeTool"
