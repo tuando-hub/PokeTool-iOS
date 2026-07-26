@@ -31,6 +31,7 @@ jobs:
       - name: Build for iOS Simulator
         run: |
           set -o pipefail
+          set +e
           xcodebuild \
             -project PokeTool.xcodeproj \
             -scheme PokeTool \
@@ -38,7 +39,15 @@ jobs:
             -sdk iphonesimulator \
             -destination 'generic/platform=iOS Simulator' \
             CODE_SIGNING_ALLOWED=NO \
-            clean build
+            clean build 2>&1 | tee "$RUNNER_TEMP/simulator-build.log"
+          BUILD_STATUS=${PIPESTATUS[0]}
+          set -e
+          if [[ "$BUILD_STATUS" -ne 0 ]]; then
+            grep -E '(^| )error:|:[0-9]+:[0-9]+: error:' "$RUNNER_TEMP/simulator-build.log" \
+              | tail -30 \
+              | while IFS= read -r line; do echo "::error::$line"; done
+            exit "$BUILD_STATUS"
+          fi
 
       - name: Run unit tests
         run: |
