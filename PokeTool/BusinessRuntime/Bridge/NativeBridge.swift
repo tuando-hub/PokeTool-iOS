@@ -12,6 +12,7 @@ import JavaScriptCore
     var Device: InfrastructureBridgeNamespace { get }
     var Events: InfrastructureBridgeNamespace { get }
     var Runtime: RuntimeBridgeNamespace { get }
+    var PhoneOtp: InfrastructureBridgeNamespace { get }
 }
 
 @objcMembers
@@ -27,6 +28,7 @@ final class NativeBridge: NSObject, NativeBridgeExport {
     let Device: InfrastructureBridgeNamespace
     let Events: InfrastructureBridgeNamespace
     let Runtime: RuntimeBridgeNamespace
+    let PhoneOtp: InfrastructureBridgeNamespace
 
     init(
         Browser: BrowserBridgeNamespace,
@@ -38,7 +40,7 @@ final class NativeBridge: NSObject, NativeBridgeExport {
         Notification: InfrastructureBridgeNamespace,
         Device: InfrastructureBridgeNamespace,
         Events: InfrastructureBridgeNamespace,
-        Runtime: RuntimeBridgeNamespace
+        Runtime: RuntimeBridgeNamespace, PhoneOtp: InfrastructureBridgeNamespace
     ) {
         self.Browser = Browser
         self.Storage = Storage
@@ -50,6 +52,7 @@ final class NativeBridge: NSObject, NativeBridgeExport {
         self.Device = Device
         self.Events = Events
         self.Runtime = Runtime
+        self.PhoneOtp = PhoneOtp
     }
 
     func stop() {
@@ -62,6 +65,7 @@ final class NativeBridge: NSObject, NativeBridgeExport {
         Device.stop()
         Events.stop()
         Runtime.stop()
+        PhoneOtp.stop()
     }
 
     func prepareForStart() {
@@ -74,6 +78,7 @@ final class NativeBridge: NSObject, NativeBridgeExport {
         Device.prepareForStart()
         Events.prepareForStart()
         Runtime.prepareForStart()
+        PhoneOtp.prepareForStart()
     }
 }
 
@@ -109,6 +114,7 @@ final class NativeBridgeFactory {
         let resolver = JavaScriptModuleResolver(limits: limits)
         let infrastructureLimits = InfrastructureResourceLimits()
         let runtimeID = UUID().uuidString
+        let phoneConfiguration = PhoneGatewayConfiguration(keychain: keychainStore)
         let runtimeNamespace = RuntimeBridgeNamespace(
             resolver: resolver,
             sourceProvider: BundleJavaScriptModuleSourceProvider(
@@ -153,7 +159,8 @@ final class NativeBridgeFactory {
                 service: EventsBridgeService(eventBus: eventBus),
                 runtimeID: runtimeID, limits: infrastructureLimits
             ),
-            Runtime: runtimeNamespace
+            Runtime: runtimeNamespace,
+            PhoneOtp: InfrastructureBridgeNamespace(service: PhoneOtpBridgeService(configuration: phoneConfiguration), runtimeID: runtimeID, limits: infrastructureLimits)
         )
     }
 }
