@@ -58,6 +58,21 @@ final class DashboardViewModel {
             viewState.isHealthy = false
         }
     }
+
+    func runWebCompatTest() async {
+        guard let runtime = runtimeFactory.makeRuntime() as? JavaScriptRuntime else {
+            viewState.runtimeText = "Web Compat Test: runtime unavailable"
+            return
+        }
+        viewState.runtimeText = "Web Compat Test: running..."
+        do {
+            viewState.runtimeText = "Web Compat Test: \(try await runtime.runDebugWebCompatibilityHarness())"
+            viewState.isHealthy = true
+        } catch {
+            viewState.runtimeText = "Web Compat Test failed: \(error.localizedDescription)"
+            viewState.isHealthy = false
+        }
+    }
     #endif
 
     private func render(_ state: AppState) {

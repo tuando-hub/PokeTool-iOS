@@ -45,6 +45,7 @@
   }
 
   const methods = [
+    "__delay",
     "create", "destroy", "load", "reload", "reloadFromOrigin", "stop", "back", "forward",
     "evaluate", "snapshot", "url", "title", "readyState", "html", "text",
     "exists", "count", "query", "click", "focus", "blur", "setValue", "type", "clear",
@@ -111,7 +112,7 @@
 
   const runtime = {
     version: "0.1.0",
-    phase: 3,
+    phase: 4,
     healthCheck: function () {
       return {
         ok: true, runtime: "JavaScriptCore", phase: this.phase,

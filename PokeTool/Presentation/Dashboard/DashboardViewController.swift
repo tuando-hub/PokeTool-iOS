@@ -26,18 +26,26 @@ final class DashboardViewController: UIViewController {
         bind()
         viewModel.start()
         #if DEBUG
-        navigationItem.rightBarButtonItem = UIBarButtonItem(
-            title: "JS Bridge Test",
-            style: .plain,
-            target: self,
-            action: #selector(runBridgeTest)
-        )
+        navigationItem.rightBarButtonItems = [
+            UIBarButtonItem(
+                title: "Web Compat Test", style: .plain,
+                target: self, action: #selector(runWebCompatTest)
+            ),
+            UIBarButtonItem(
+                title: "JS Bridge Test", style: .plain,
+                target: self, action: #selector(runBridgeTest)
+            )
+        ]
         #endif
     }
 
     #if DEBUG
     @objc private func runBridgeTest() {
         Task { @MainActor [weak self] in await self?.viewModel.runBridgeTest() }
+    }
+
+    @objc private func runWebCompatTest() {
+        Task { @MainActor [weak self] in await self?.viewModel.runWebCompatTest() }
     }
     #endif
 

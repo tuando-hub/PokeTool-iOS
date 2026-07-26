@@ -3,12 +3,14 @@ import JavaScriptCore
 
 enum JavaScriptRuntimeError: LocalizedError {
     case missingBootstrap
+    case missingCompatibilityLayer
     case evaluationFailed(String)
     case invalidHealthResponse
 
     var errorDescription: String? {
         switch self {
         case .missingBootstrap: return "JavaScript bootstrap resource is missing."
+        case .missingCompatibilityLayer: return "Browser compatibility resource is missing."
         case .evaluationFailed(let message): return "JavaScript evaluation failed: \(message)"
         case .invalidHealthResponse: return "JavaScript runtime returned an invalid health response."
         }
@@ -50,6 +52,18 @@ final class JavaScriptRuntime: BusinessRuntime {
         }
 
         context.evaluateScript(source, withSourceURL: url)
+        if let exceptionMessage {
+            throw JavaScriptRuntimeError.evaluationFailed(exceptionMessage)
+        }
+
+        let compatibilityURL =
+            Bundle.main.url(forResource: "browser-compat", withExtension: "js", subdirectory: "JavaScript")
+            ?? Bundle.main.url(forResource: "browser-compat", withExtension: "js")
+        guard let compatibilityURL,
+              let compatibilitySource = try? String(contentsOf: compatibilityURL, encoding: .utf8) else {
+            throw JavaScriptRuntimeError.missingCompatibilityLayer
+        }
+        context.evaluateScript(compatibilitySource, withSourceURL: compatibilityURL)
         if let exceptionMessage {
             throw JavaScriptRuntimeError.evaluationFailed(exceptionMessage)
         }
@@ -121,6 +135,61 @@ final class JavaScriptRuntime: BusinessRuntime {
             try await Task.sleep(for: .milliseconds(100))
         }
         throw JavaScriptRuntimeError.evaluationFailed("Debug bridge harness timed out")
+    }
+
+    func runAsyncTestScript(_ source: String, timeout: TimeInterval = 30) async throws -> String {
+        guard context != nil else { throw JavaScriptRuntimeError.evaluationFailed("Runtime is not started") }
+        let marker = "__pokeToolAsyncTestResult"
+        context?.evaluateScript(
+            """
+            this.\(marker) = "pending";
+            (async function () {
+              \(source)
+            }).call(this).then(
+              value => { this.\(marker) = JSON.stringify({ok:true,value:value}); },
+              error => { this.\(marker) = JSON.stringify({
+                ok:false,error:{name:error.name,code:error.code,message:error.message}
+              }); }
+            );
+            """
+        )
+        let iterations = Int(min(max(timeout, 0.1), 120) * 10)
+        for _ in 0..<iterations {
+            try Task.checkCancellation()
+            if let result = context?.objectForKeyedSubscript(marker)?.toString(),
+               result != "pending" {
+                return result
+            }
+            try await Task.sleep(for: .milliseconds(100))
+        }
+        throw JavaScriptRuntimeError.evaluationFailed("Async JavaScript test timed out")
+    }
+
+    func runDebugWebCompatibilityHarness() async throws -> String {
+        _ = try start()
+        defer { stop() }
+        return try await runAsyncTestScript(
+            """
+            let browser;
+            try {
+              browser = await PokeToolRuntime.browser.create();
+              await browser.load("https://example.com");
+              await PokeToolRuntime.web.waitPageReady(browser, 20000);
+              await PokeToolRuntime.web.waitVisible(browser, "body", 15000);
+              await PokeToolRuntime.web.waitText(browser, "Example Domain", 15000);
+              const result = {
+                title: await PokeToolRuntime.web.getTitle(browser),
+                url: await PokeToolRuntime.web.getURL(browser)
+              };
+              await PokeToolRuntime.web.safeDestroy(browser);
+              return result;
+            } catch (error) {
+              if (browser) await PokeToolRuntime.web.safeDestroy(browser);
+              throw error;
+            }
+            """,
+            timeout: 60
+        )
     }
     #endif
 }

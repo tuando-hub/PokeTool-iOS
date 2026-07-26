@@ -1,5 +1,35 @@
 # PokeTool iOS Architecture
 
+## Phase 4: Browser Compatibility Layer
+
+`browser-compat.js` adds `PokeToolRuntime.web` above the Phase 3 BrowserHandle.
+It is JavaScript-only except for the cancellable native delay primitive required
+because standalone JavaScriptCore has no timer host. All page/session work still
+flows through Native.Browser and BrowserManager.
+
+```text
+Legacy-style helper call
+  -> PokeToolRuntime.web
+  -> sequential Promise polling / explicit reloadOnce
+  -> PokeToolRuntime.browser
+  -> Native.Browser
+  -> BrowserBridgeService
+```
+
+Polling is bounded, normally 250 ms, and strictly sequential: every browser call
+and delay settles before another iteration starts. Runtime stop cancels the one
+pending Promise via the existing Phase 3 registry. Matcher predicates remain
+local JavaScript functions and are never retained by Swift.
+
+Compatibility errors normalize timeout, element state, invalid selectors,
+destroyed browsers, cancellation and one-shot recovery failures without
+including source, page HTML or credentials. No retry exists in BrowserHandle;
+the clearly named `reloadOnce` helper reloads at most one time.
+
+Debug Dashboard retains **JS Bridge Test** and adds **Web Compat Test**, which
+runs create, example.com load, readiness, visible body, text, title/URL and safe
+destroy through the compatibility namespace.
+
 ## Phase 3: Browser Bridge
 
 ```text

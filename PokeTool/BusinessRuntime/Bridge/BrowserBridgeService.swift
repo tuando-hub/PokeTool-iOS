@@ -29,6 +29,18 @@ final class BrowserBridgeService {
         let args = payload.objectValue?["args"]?.arrayValue ?? []
 
         switch method {
+        case "__delay":
+            guard let value = args.first, case .number(let milliseconds) = value,
+                  milliseconds.isFinite, milliseconds >= 0,
+                  milliseconds <= limits.maximumTimeout * 1_000 else {
+                throw BridgeArgumentError(
+                    method: "delay", argument: "ms",
+                    expected: "finite number from 0 through 120000", received: "invalid"
+                )
+            }
+            try await Task.sleep(for: .milliseconds(milliseconds))
+            return "null"
+
         case "create":
             let options: BrowserCreateOptions? = try optional(args, 0, method: method)
             let attributes = options?.metadata ?? [:]
