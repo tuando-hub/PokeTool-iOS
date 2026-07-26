@@ -90,6 +90,79 @@ final class JavaScriptRuntime: BusinessRuntime {
         context = nil
     }
 
+    func startProductRun(tasksJSON: String, executorModuleID: String) async throws -> String {
+        guard executorModuleID.hasPrefix("/modules/"),
+              !executorModuleID.contains("\\"),
+              !executorModuleID.contains("..") else {
+            throw JavaScriptRuntimeError.evaluationFailed("Product executor module ID is invalid")
+        }
+        let tasksData = Data(tasksJSON.utf8)
+        _ = try JSONSerialization.jsonObject(with: tasksData)
+        let encodedTasksData = try JSONSerialization.data(
+            withJSONObject: tasksJSON, options: [.fragmentsAllowed]
+        )
+        guard let encodedTasks = String(data: encodedTasksData, encoding: .utf8) else {
+            throw JavaScriptRuntimeError.evaluationFailed("Task serialization failed")
+        }
+        let encodedModule = executorModuleID
+            .replacingOccurrences(of: "\\", with: "\\\\")
+            .replacingOccurrences(of: "'", with: "\\'")
+        return try await runAsyncScript(
+            """
+            const product = require("/modules/product/index");
+            const executor = require('\(encodedModule)');
+            return await product.runner.start(JSON.parse(\(encodedTasks)), executor);
+            """,
+            timeout: 120
+        )
+    }
+
+    func stopProductRun(reason: String = "Application requested stop") {
+        let encoded = reason
+            .replacingOccurrences(of: "\\", with: "\\\\")
+            .replacingOccurrences(of: "'", with: "\\'")
+        context?.evaluateScript(
+            "require('/modules/product/index').runner.stop('\(encoded)')"
+        )
+    }
+
+    func productStateSnapshot() -> String {
+        context?.evaluateScript(
+            "JSON.stringify(require('/modules/product/index').core.current())"
+        )?.toString() ?? "{}"
+    }
+
+    private func runAsyncScript(_ source: String, timeout: TimeInterval) async throws -> String {
+        guard context != nil else {
+            throw JavaScriptRuntimeError.evaluationFailed("Runtime is not started")
+        }
+        let marker = "__pokeToolProductAsyncResult"
+        context?.evaluateScript(
+            """
+            this.\(marker) = "pending";
+            (async function () {
+              \(source)
+            }).call(this).then(
+              value => { this.\(marker) = JSON.stringify({ok:true,value:value}); },
+              error => { this.\(marker) = JSON.stringify({
+                ok:false,error:{name:error.name,code:error.code,message:error.message,
+                  taskId:error.taskId,flowId:error.flowId,diagnostics:error.diagnostics}
+              }); }
+            );
+            """
+        )
+        let iterations = Int(min(max(timeout, 0.1), 120) * 10)
+        for _ in 0..<iterations {
+            try Task.checkCancellation()
+            if let result = context?.objectForKeyedSubscript(marker)?.toString(),
+               result != "pending" {
+                return result
+            }
+            try await Task.sleep(for: .milliseconds(100))
+        }
+        throw JavaScriptRuntimeError.evaluationFailed("Product JavaScript operation timed out")
+    }
+
     #if DEBUG
     func evaluateForTesting(_ source: String) -> JSValue? {
         context?.evaluateScript(source)
@@ -141,31 +214,7 @@ final class JavaScriptRuntime: BusinessRuntime {
     }
 
     func runAsyncTestScript(_ source: String, timeout: TimeInterval = 30) async throws -> String {
-        guard context != nil else { throw JavaScriptRuntimeError.evaluationFailed("Runtime is not started") }
-        let marker = "__pokeToolAsyncTestResult"
-        context?.evaluateScript(
-            """
-            this.\(marker) = "pending";
-            (async function () {
-              \(source)
-            }).call(this).then(
-              value => { this.\(marker) = JSON.stringify({ok:true,value:value}); },
-              error => { this.\(marker) = JSON.stringify({
-                ok:false,error:{name:error.name,code:error.code,message:error.message}
-              }); }
-            );
-            """
-        )
-        let iterations = Int(min(max(timeout, 0.1), 120) * 10)
-        for _ in 0..<iterations {
-            try Task.checkCancellation()
-            if let result = context?.objectForKeyedSubscript(marker)?.toString(),
-               result != "pending" {
-                return result
-            }
-            try await Task.sleep(for: .milliseconds(100))
-        }
-        throw JavaScriptRuntimeError.evaluationFailed("Async JavaScript test timed out")
+        try await runAsyncScript(source, timeout: timeout)
     }
 
     func runDebugWebCompatibilityHarness() async throws -> String {

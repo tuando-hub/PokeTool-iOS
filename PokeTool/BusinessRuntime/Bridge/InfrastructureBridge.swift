@@ -471,7 +471,7 @@ final class SystemInfrastructureBridgeService: BaseInfrastructureService {
                 "version": Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0.0.0",
                 "build": Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "0"
             ]
-        case "runtimeInfo": return ["engine": "JavaScriptCore", "phase": 6]
+        case "runtimeInfo": return ["engine": "JavaScriptCore", "phase": 7]
         case "now": return Date().timeIntervalSince1970 * 1_000
         case "monotonicNow": return ProcessInfo.processInfo.systemUptime * 1_000
         case "sleep":
@@ -494,7 +494,7 @@ final class SystemInfrastructureBridgeService: BaseInfrastructureService {
         case "memoryInfo":
             return ["physicalMemory": ProcessInfo.processInfo.physicalMemory]
         case "environment":
-            return ["platform": "iOS", "runtime": "JavaScriptCore", "phase": 6]
+            return ["platform": "iOS", "runtime": "JavaScriptCore", "phase": 7]
         default: return try await super.perform(method: method, arguments: arguments)
         }
     }
@@ -575,7 +575,7 @@ final class NotificationBridgeService: BaseInfrastructureService {
 final class EventsBridgeService: BaseInfrastructureService {
     private let eventBus: EventBus
     override var capabilities: [String: Any] {
-        ["emit": true, "allowedPrefixes": ["js.", "runtime.", "plugin."],
+        ["emit": true, "allowedPrefixes": ["js.", "runtime.", "plugin.", "runner.", "flow."],
          "nativeSubscriptions": false, "compatibilitySubscriptions": "runtimeLocal"]
     }
     init(eventBus: EventBus) { self.eventBus = eventBus; super.init(namespace: "Events") }
@@ -583,7 +583,7 @@ final class EventsBridgeService: BaseInfrastructureService {
         try checkRunning(method)
         guard method == "emit" else { return try await super.perform(method: method, arguments: arguments) }
         let name = try string(arguments, 0, method)
-        guard ["js.", "runtime.", "plugin."].contains(where: name.hasPrefix) else {
+        guard ["js.", "runtime.", "plugin.", "runner.", "flow."].contains(where: name.hasPrefix) else {
             throw failure("EVENT_FORBIDDEN_NAME", "JavaScript cannot emit reserved native events.", method)
         }
         let payload = arguments.indices.contains(1) ? arguments[1] : NSNull()

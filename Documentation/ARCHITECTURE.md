@@ -1,5 +1,26 @@
 # PokeTool iOS Architecture
 
+## Phase 7: Product Runtime and Verified Web Flows
+
+```text
+Application ProductRuntimeService
+  -> JavaScriptRuntime
+  -> /modules/product
+      -> Core state/error/cancellation
+      -> Sequential Runner
+      -> WebFlowEngine
+          -> PageGuard
+          -> TransitionGuard
+          -> BrowserHandle / PokeToolRuntime.web
+```
+
+The product module is lazy and bootstrap never starts business work. Every flow
+step verifies a precondition and postcondition; retries and recovery are finite
+and owned by the flow layer. Debug uses only app-bundled `about:blank` fixtures.
+See [WEB_FLOW_ENGINE.md](WEB_FLOW_ENGINE.md),
+[PRODUCT_RUNTIME.md](PRODUCT_RUNTIME.md), and
+[MIGRATION_STRATEGY.md](MIGRATION_STRATEGY.md).
+
 ## Phase 6: Native Infrastructure Bridge
 
 ```text

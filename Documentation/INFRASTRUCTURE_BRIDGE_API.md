@@ -67,7 +67,13 @@ Limits: URL 4,096 characters, 64 headers/32 KiB, request 4 MiB, response 16 MiB,
 
 ## Events
 
-JavaScript may emit only `js.*`, `runtime.*`, or `plugin.*`; native-reserved names are rejected. Native EventBus receives serialized bounded payload diagnostics. `PokeToolRuntime.events` provides runtime-local `on`, `off`, `once`, `next`, and `emit`, with 128 subscriptions and timeout cleanup. Delivery is ordered synchronously after the native emit Promise resolves. Handler exceptions are logged without crashing.
+JavaScript may emit only `js.*`, `runtime.*`, `plugin.*`, `runner.*`, or
+`flow.*`; native-reserved names are rejected. Runner/flow prefixes are reserved
+for the product runtime, not website modes. Native EventBus receives serialized
+bounded payload diagnostics. `PokeToolRuntime.events` provides runtime-local
+`on`, `off`, `once`, `next`, and `emit`, with 128 subscriptions and timeout
+cleanup. Delivery is ordered synchronously after the native emit Promise
+resolves. Handler exceptions are logged without crashing.
 
 Long-lived native EventBus-to-JS callbacks are intentionally not exposed in version 1.0, avoiding JSValue/EventBus retain cycles. Capability reports `nativeSubscriptions:false`.
 

@@ -129,7 +129,7 @@ final class BrowserCompatibilityTests: XCTestCase {
         let runtime = try makeRuntime()
         defer { runtime.stop() }
         XCTAssertEqual(runtime.evaluateForTesting("typeof PokeToolRuntime.web")?.toString(), "object")
-        XCTAssertEqual(runtime.evaluateForTesting("PokeToolRuntime.phase")?.toInt32(), 6)
+        XCTAssertEqual(runtime.evaluateForTesting("PokeToolRuntime.phase")?.toInt32(), 7)
         XCTAssertEqual(runtime.evaluateForTesting("typeof Pokemon")?.toString(), "undefined")
         XCTAssertEqual(runtime.evaluateForTesting("typeof OTP")?.toString(), "undefined")
     }

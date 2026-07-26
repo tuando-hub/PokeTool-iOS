@@ -14,6 +14,7 @@ final class DependencyContainer {
     let keychainStore: KeychainStore
     let backgroundService: BackgroundService
     let notificationService: NotificationService
+    let productRuntimeService: ProductRuntimeService
 
     init() {
         appStateStore = AppStateStore()
@@ -76,5 +77,6 @@ final class DependencyContainer {
             bridgeFactory: bridgeFactory,
             logger: logger
         )
+        productRuntimeService = ProductRuntimeService(runtimeFactory: runtimeFactory)
     }
 }

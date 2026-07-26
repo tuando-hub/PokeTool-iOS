@@ -28,6 +28,14 @@ final class DashboardViewController: UIViewController {
         #if DEBUG
         navigationItem.rightBarButtonItems = [
             UIBarButtonItem(
+                title: "Stop", style: .plain,
+                target: self, action: #selector(stopProductFlowTest)
+            ),
+            UIBarButtonItem(
+                title: "Product Flow", style: .plain,
+                target: self, action: #selector(runProductFlowTest)
+            ),
+            UIBarButtonItem(
                 title: "Infrastructure", style: .plain,
                 target: self, action: #selector(runInfrastructureTest)
             ),
@@ -62,6 +70,14 @@ final class DashboardViewController: UIViewController {
 
     @objc private func runInfrastructureTest() {
         Task { @MainActor [weak self] in await self?.viewModel.runInfrastructureTest() }
+    }
+
+    @objc private func runProductFlowTest() {
+        Task { @MainActor [weak self] in await self?.viewModel.runProductFlowTest() }
+    }
+
+    @objc private func stopProductFlowTest() {
+        viewModel.stopProductFlowTest()
     }
     #endif
 

@@ -182,7 +182,7 @@ final class JavaScriptModuleSystemTests: XCTestCase {
             DependencyContainer().runtimeFactory.makeRuntime() as? JavaScriptRuntime
         )
         let health = try runtime.start()
-        XCTAssertEqual(health.phase, 6)
+        XCTAssertEqual(health.phase, 7)
         return runtime
     }
 

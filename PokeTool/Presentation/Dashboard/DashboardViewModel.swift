@@ -14,11 +14,17 @@ final class DashboardViewModel {
 
     private let stateStore: AppStateStore
     private let runtimeFactory: BusinessRuntimeFactory
+    private let productRuntimeService: ProductRuntimeService
     private var cancellables = Set<AnyCancellable>()
 
-    init(stateStore: AppStateStore, runtimeFactory: BusinessRuntimeFactory) {
+    init(
+        stateStore: AppStateStore,
+        runtimeFactory: BusinessRuntimeFactory,
+        productRuntimeService: ProductRuntimeService
+    ) {
         self.stateStore = stateStore
         self.runtimeFactory = runtimeFactory
+        self.productRuntimeService = productRuntimeService
 
         stateStore.publisher
             .receive(on: DispatchQueue.main)
@@ -106,6 +112,32 @@ final class DashboardViewModel {
             viewState.runtimeText = "Infrastructure Test failed: \(error.localizedDescription)"
             viewState.isHealthy = false
         }
+    }
+
+    func runProductFlowTest() async {
+        viewState.runtimeText = "Product Flow Test: running..."
+        do {
+            let tasks = """
+            [{"id":"fixture-success","mode":"fixture","payload":{"outcome":"success"}}]
+            """
+            let summary = try await productRuntimeService.start(
+                tasksJSON: tasks,
+                executorModuleID: "/modules/fixtures/product-flow-executor"
+            )
+            viewState.runtimeText =
+                "Product Flow Test: total=\(summary.total) succeeded=\(summary.succeeded) " +
+                "failed=\(summary.failed) cancelled=\(summary.cancelled) duration=\(summary.durationMs)ms"
+            viewState.isHealthy = summary.succeeded == 1
+        } catch {
+            viewState.runtimeText = "Product Flow Test failed: \(error.localizedDescription)"
+            viewState.isHealthy = false
+        }
+    }
+
+    func stopProductFlowTest() {
+        productRuntimeService.stop(reason: "Debug user requested stop")
+        viewState.runtimeText = "Product Flow Test: cancellation requested\n" +
+            productRuntimeService.stateSnapshot()
     }
     #endif
 

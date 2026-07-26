@@ -14,7 +14,8 @@ final class AppCoordinator {
         let dashboard = DashboardViewController(
             viewModel: DashboardViewModel(
                 stateStore: container.appStateStore,
-                runtimeFactory: container.runtimeFactory
+                runtimeFactory: container.runtimeFactory,
+                productRuntimeService: container.productRuntimeService
             )
         )
         dashboard.tabBarItem = UITabBarItem(

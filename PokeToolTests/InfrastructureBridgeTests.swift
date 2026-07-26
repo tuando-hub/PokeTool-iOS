@@ -150,7 +150,7 @@ final class InfrastructureBridgeTests: XCTestCase {
         let runtime = try XCTUnwrap(
             DependencyContainer().runtimeFactory.makeRuntime() as? JavaScriptRuntime
         )
-        XCTAssertEqual(try runtime.start().phase, 6)
+        XCTAssertEqual(try runtime.start().phase, 7)
         return runtime
     }
 
