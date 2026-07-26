@@ -233,4 +233,3 @@ jobs:
           name: PokeTool-UI-Screenshots
           path: ${{ runner.temp }}/ui-screenshots
           if-no-files-found: error
-          if-no-files-found: error
