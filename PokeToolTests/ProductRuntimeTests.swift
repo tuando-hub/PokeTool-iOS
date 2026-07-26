@@ -162,7 +162,11 @@ final class ProductRuntimeTests: XCTestCase {
         XCTAssertEqual(value["failed"] as? Int, 1)
         let results = try XCTUnwrap(value["results"] as? [[String: Any]])
         XCTAssertEqual(results[1]["status"] as? String, "failed")
-        XCTAssertEqual((results[1]["error"] as? [String: Any])?["code"] as? String, "UNEXPECTED_PAGE")
+        XCTAssertEqual(
+            (results[1]["error"] as? [String: Any])?["code"] as? String,
+            "UNEXPECTED_PAGE",
+            response
+        )
     }
 
     @MainActor

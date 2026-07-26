@@ -3,7 +3,14 @@ function task(task, status, value, error, durationMs) {
   return {
     taskId:task.id, mode:task.mode, index:task.index, status:status,
     value:value === undefined ? null : value,
-    error:error ? {code:error.code || "INTERNAL_FLOW_ERROR", message:error.message, retryable:Boolean(error.retryable)} : null,
+    error:error ? {
+      name:error.name || "ProductError",
+      code:error.code || "INTERNAL_FLOW_ERROR",
+      message:error.message,
+      retryable:Boolean(error.retryable),
+      causeCode:error.causeCode || null,
+      diagnostics:error.diagnostics || null
+    } : null,
     durationMs:durationMs
   };
 }
