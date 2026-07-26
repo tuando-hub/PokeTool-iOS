@@ -38,7 +38,7 @@ async function recover(options, attempt, deadline) {
   }
 }
 
-async function observe(browser, descriptors, deadline, token, history) {
+async function observe(browser, descriptors, deadline, token, history, detectUnexpected) {
   let last;
   while (performance.now() < deadline) {
     token && token.throwIfCancelled();
@@ -52,6 +52,16 @@ async function observe(browser, descriptors, deadline, token, history) {
       const result = await PageGuard.inspect(browser, descriptor);
       if (result.ok) return {descriptor:descriptor, result:result};
       last = result;
+    }
+    if (detectUnexpected) {
+      const unexpected = await detectUnexpected(browser);
+      if (unexpected) {
+        throw PageGuard.flowError("UNEXPECTED_PAGE", "Unexpected page detected during transition.", {
+          state:unexpected.code,
+          descriptor:unexpected.descriptor && unexpected.descriptor.name,
+          history:history
+        });
+      }
     }
     await web.delay(Math.min(250, Math.max(4, deadline - performance.now())));
   }
@@ -81,7 +91,7 @@ async function perform(options) {
       await options.action({attempt:attempt, browser:options.browser});
       const observed = await observe(
         options.browser, [options.to].concat(options.allowIntermediate || []),
-        deadline, options.cancellationToken, history
+        deadline, options.cancellationToken, history, options.detectUnexpected
       );
       if (observed.descriptor === options.to) {
         return {

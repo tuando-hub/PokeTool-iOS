@@ -39,6 +39,7 @@ async function run(context, steps) {
         timeoutMs:step.timeoutMs, retryPolicy:step.retryPolicy,
         recoveryPolicy:step.recoveryPolicy,
         cancellationToken:context.cancellationToken,
+        detectUnexpected:browser => UnexpectedPages.detect(browser),
         onRetry:async info => {
           record.state = "Retrying"; record.attempt = info.attempt;
           context.emit && await context.emit("flow.step.retrying", {
@@ -54,7 +55,8 @@ async function run(context, steps) {
         stepId:step.id, durationMs:record.durationMs
       });
     } catch (error) {
-      const unexpected = await UnexpectedPages.detect(context.browser);
+      const unexpected = error.code === "UNEXPECTED_PAGE"
+        ? null : await UnexpectedPages.detect(context.browser);
       if (unexpected) {
         error = PageGuard.flowError("UNEXPECTED_PAGE", "Unexpected page detected.", {
           state:unexpected.code, descriptor:unexpected.descriptor.name
