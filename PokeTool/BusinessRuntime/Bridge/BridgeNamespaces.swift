@@ -146,11 +146,14 @@ final class BrowserBridgeNamespace: NSObject, BrowserBridgeNamespaceExport {
         return promise.call(withArguments: [object(error, context: context)])
     }
 
-    private func object<T: Encodable>(_ value: T, context: JSContext?) -> Any {
+    private func object<T: Encodable>(_ value: T, context: JSContext?) -> JSValue {
         guard let context,
               let data = try? JSONEncoder().encode(value),
-              let object = try? JSONSerialization.jsonObject(with: data) else { return NSNull() }
-        return JSValue(object: object, in: context) ?? NSNull()
+              let object = try? JSONSerialization.jsonObject(with: data),
+              let result = JSValue(object: object, in: context) else {
+            return JSValue(undefinedIn: context)
+        }
+        return result
     }
 
     private static func extractBrowserId(_ payloadJSON: String) -> String? {
