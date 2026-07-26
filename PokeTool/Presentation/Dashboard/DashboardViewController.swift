@@ -25,6 +25,7 @@ final class DashboardViewController: UIViewController {
         configureUI()
         bind()
         viewModel.start()
+        navigationItem.rightBarButtonItem = UIBarButtonItem(title: "Phone OTP", style: .plain, target: self, action: #selector(openPhoneGateway))
         navigationItem.leftBarButtonItems = [
             UIBarButtonItem(title: "RUN", style: .done, target: self, action: #selector(runPokemonTasks)),
             UIBarButtonItem(title: "JUMP+", style: .done, target: self, action: #selector(runJumpPlusTasks)),
@@ -69,6 +70,8 @@ final class DashboardViewController: UIViewController {
         ]
         #endif
     }
+
+    @objc private func openPhoneGateway() { navigationController?.pushViewController(PhoneGatewayViewController(), animated: true) }
 
     @objc private func runPokemonTasks() {
         let alert = UIAlertController(
