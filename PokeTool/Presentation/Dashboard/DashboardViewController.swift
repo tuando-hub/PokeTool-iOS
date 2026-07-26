@@ -25,7 +25,21 @@ final class DashboardViewController: UIViewController {
         configureUI()
         bind()
         viewModel.start()
+        #if DEBUG
+        navigationItem.rightBarButtonItem = UIBarButtonItem(
+            title: "JS Bridge Test",
+            style: .plain,
+            target: self,
+            action: #selector(runBridgeTest)
+        )
+        #endif
     }
+
+    #if DEBUG
+    @objc private func runBridgeTest() {
+        Task { @MainActor [weak self] in await self?.viewModel.runBridgeTest() }
+    }
+    #endif
 
     private func configureUI() {
         title = "Dashboard"
@@ -77,4 +91,3 @@ final class DashboardViewController: UIViewController {
             .store(in: &cancellables)
     }
 }
-

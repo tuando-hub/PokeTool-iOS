@@ -43,6 +43,23 @@ final class DashboardViewModel {
         }
     }
 
+    #if DEBUG
+    func runBridgeTest() async {
+        guard let runtime = runtimeFactory.makeRuntime() as? JavaScriptRuntime else {
+            viewState.runtimeText = "JS Bridge Test: runtime unavailable"
+            return
+        }
+        viewState.runtimeText = "JS Bridge Test: running..."
+        do {
+            viewState.runtimeText = "JS Bridge Test: \(try await runtime.runDebugBrowserBridgeHarness())"
+            viewState.isHealthy = true
+        } catch {
+            viewState.runtimeText = "JS Bridge Test failed: \(error.localizedDescription)"
+            viewState.isHealthy = false
+        }
+    }
+    #endif
+
     private func render(_ state: AppState) {
         switch state.runtimeStatus {
         case .idle:

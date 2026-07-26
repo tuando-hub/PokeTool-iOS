@@ -82,6 +82,12 @@ does not contain JSBox compatibility, modes, business logic, website-specific
 selectors, retries, proxying, stealth, CAPTCHA handling, or Phase 4 runtime
 features.
 
+In Debug builds, Dashboard exposes a separate **JS Bridge Test**. It creates the
+runtime and browser through JavaScript, loads `example.com`, awaits navigation,
+reads title/readyState, queries `body`, and destroys the browser. This is kept
+separate from the native Browser Engine harness and does not contain business
+website behavior.
+
 ## Phase 2: Native Browser Operations
 
 Phase 2 adds native-only operations; it does not add a JavaScriptCore Browser API

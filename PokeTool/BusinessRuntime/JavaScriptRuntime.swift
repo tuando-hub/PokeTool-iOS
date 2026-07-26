@@ -79,6 +79,49 @@ final class JavaScriptRuntime: BusinessRuntime {
     func evaluateForTesting(_ source: String) -> JSValue? {
         context?.evaluateScript(source)
     }
+
+    func runDebugBrowserBridgeHarness() async throws -> String {
+        _ = try start()
+        defer { stop() }
+        let marker = "__pokeToolBridgeHarnessResult"
+        context?.evaluateScript(
+            """
+            this.\(marker) = "pending";
+            (async function () {
+              let browser;
+              try {
+                browser = await PokeToolRuntime.browser.create();
+                await browser.load("https://example.com");
+                await browser.waitNavigation({type:"finished"}, {timeoutMs:20000});
+                const result = {
+                  browserId: browser.browserId,
+                  title: await browser.title(),
+                  readyState: await browser.readyState(),
+                  hasBody: await browser.exists("body")
+                };
+                await browser.destroy();
+                this.\(marker) = JSON.stringify({ok:true,result:result});
+              } catch (error) {
+                if (browser) { try { await browser.destroy(); } catch (_) {} }
+                this.\(marker) = JSON.stringify({
+                  ok:false,
+                  error:{name:error.name,code:error.code,message:error.message,
+                         operationId:error.operationId,browserId:error.browserId}
+                });
+              }
+            }).call(this);
+            """
+        )
+        for _ in 0..<300 {
+            try Task.checkCancellation()
+            if let result = context?.objectForKeyedSubscript(marker)?.toString(),
+               result != "pending" {
+                return result
+            }
+            try await Task.sleep(for: .milliseconds(100))
+        }
+        throw JavaScriptRuntimeError.evaluationFailed("Debug bridge harness timed out")
+    }
     #endif
 }
 
