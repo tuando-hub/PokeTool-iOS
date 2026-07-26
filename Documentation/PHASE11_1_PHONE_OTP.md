@@ -1,0 +1,3 @@
+# Phase 11.1 phone OTP path
+
+The server selects a provider with `PHONE_OTP_PROVIDER`; the iOS app only uses the HTTPS gateway. `mock` is deterministic for CI, `unconfigured` fails safely, and configured upstream adapters use server-only `PHONE_OTP_UPSTREAM_BASE_URL` and `PHONE_OTP_UPSTREAM_TOKEN`. Email OTP continues through GETOtp independently. The native client enforces HTTPS, cancellation, bounded request timeouts, Codable responses, and Keychain-only API keys. Full UIKit settings/JavaScriptCore exposure and physical-device validation remain follow-up work; no live provider credentials are included.
