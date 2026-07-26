@@ -233,6 +233,7 @@
 				CODE_SIGN_ENTITLEMENTS = PokeTool/Supporting/PokeTool.entitlements;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "";
+				ENABLE_TESTABILITY = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = PokeTool/Supporting/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
