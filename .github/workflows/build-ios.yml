@@ -128,6 +128,13 @@ jobs:
           path: ${{ runner.temp }}/PokeTool-unsigned.ipa
           if-no-files-found: error
 
+      - name: Upload flow validation report
+        uses: actions/upload-artifact@v4
+        with:
+          name: PokeTool-Flow-Validation
+          path: FLOW_VALIDATION.md
+          if-no-files-found: error
+
       - name: Detect signing secrets
         id: signing
         env:
