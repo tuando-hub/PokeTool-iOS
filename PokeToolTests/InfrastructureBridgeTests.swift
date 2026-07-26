@@ -8,7 +8,8 @@ final class InfrastructureBridgeTests: XCTestCase {
         defer { try? FileManager.default.removeItem(at: root) }
         let store = FileStore(rootURL: root)
         try await store.write("/data/value.txt", data: Data("hello".utf8))
-        XCTAssertEqual(String(data: try await store.read("/data/value.txt"), encoding: .utf8), "hello")
+        let storedData = try await store.read("/data/value.txt")
+        XCTAssertEqual(String(data: storedData, encoding: .utf8), "hello")
         await XCTAssertThrowsErrorAsync {
             try await store.write("/data/value.txt", data: Data(), overwrite: false)
         }
