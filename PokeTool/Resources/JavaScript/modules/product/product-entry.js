@@ -1,6 +1,6 @@
 "use strict";
-const core = require("../core/index");
-const runner = require("../runner/index");
+const core = require("../core/core-entry");
+const runner = require("../runner/runner-entry");
 const flow = require("/runtime/web-flow-engine");
 module.exports = Object.freeze({
   version:"1.0.0",

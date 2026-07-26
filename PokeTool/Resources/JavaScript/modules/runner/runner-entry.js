@@ -1,5 +1,5 @@
 "use strict";
-const core = require("../core/index");
+const core = require("../core/core-entry");
 const web = require("/compat/browser-compat");
 
 let configuration = {

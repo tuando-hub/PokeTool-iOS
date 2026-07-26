@@ -3,11 +3,11 @@
 ## Modules
 
 ```text
-/modules/product/index.js
+/modules/product/product-entry.js
   -> /modules/core/
       constants, errors, state, task, result,
       cancellation, diagnostics
-  -> /modules/runner/index.js
+  -> /modules/runner/runner-entry.js
   -> /runtime/web-flow-engine.js
 ```
 

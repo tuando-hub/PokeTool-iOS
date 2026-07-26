@@ -1,5 +1,5 @@
 "use strict";
-const product = require("/modules/product/index");
+const product = require("/modules/product/product-entry");
 
 const HOME = {
   name:"Fixture Home",

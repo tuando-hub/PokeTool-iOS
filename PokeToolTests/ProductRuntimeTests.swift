@@ -107,7 +107,7 @@ final class ProductRuntimeTests: XCTestCase {
         defer { runtime.stop() }
         let result = try await runtime.runAsyncTestScript(
             """
-            const product = require("/modules/product/index");
+            const product = require("/modules/product/product-entry");
             product.runner.reset();
             product.runner.configure({stopOnError:false,taskTimeoutMs:1000});
             const order=[];
@@ -169,9 +169,9 @@ final class ProductRuntimeTests: XCTestCase {
     func testProductCapabilitiesAndNoWebsiteBusinessModules() throws {
         let runtime = try makeRuntime()
         defer { runtime.stop() }
-        XCTAssertEqual(runtime.evaluateForTesting("require('/modules/product/index').version")?.toString(), "1.0.0")
+        XCTAssertEqual(runtime.evaluateForTesting("require('/modules/product/product-entry').version")?.toString(), "1.0.0")
         XCTAssertEqual(
-            runtime.evaluateForTesting("require('/modules/product/index').capabilities.verifiedTransitions")?.toBool(),
+            runtime.evaluateForTesting("require('/modules/product/product-entry').capabilities.verifiedTransitions")?.toBool(),
             true
         )
         for name in ["OTP", "Pokemon", "Jump", "Amazon"] {

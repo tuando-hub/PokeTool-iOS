@@ -109,7 +109,7 @@ final class JavaScriptRuntime: BusinessRuntime {
             .replacingOccurrences(of: "'", with: "\\'")
         return try await runAsyncScript(
             """
-            const product = require("/modules/product/index");
+            const product = require("/modules/product/product-entry");
             const executor = require('\(encodedModule)');
             return await product.runner.start(JSON.parse(\(encodedTasks)), executor);
             """,
@@ -122,13 +122,13 @@ final class JavaScriptRuntime: BusinessRuntime {
             .replacingOccurrences(of: "\\", with: "\\\\")
             .replacingOccurrences(of: "'", with: "\\'")
         context?.evaluateScript(
-            "require('/modules/product/index').runner.stop('\(encoded)')"
+            "require('/modules/product/product-entry').runner.stop('\(encoded)')"
         )
     }
 
     func productStateSnapshot() -> String {
         context?.evaluateScript(
-            "JSON.stringify(require('/modules/product/index').core.current())"
+            "JSON.stringify(require('/modules/product/product-entry').core.current())"
         )?.toString() ?? "{}"
     }
 
