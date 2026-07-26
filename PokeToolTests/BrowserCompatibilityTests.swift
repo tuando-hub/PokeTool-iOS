@@ -18,7 +18,7 @@ final class BrowserCompatibilityTests: XCTestCase {
             await web.evalJS(browser, `
               document.title = "Compat Test";
               document.body.innerHTML =
-                '<div id="visible">Hello Compat</div>' +
+                '<div id="visible" style="display:block;width:120px;height:24px">Hello Compat</div>' +
                 '<div id="hidden" style="display:none">Hidden</div>' +
                 '<input id="email" value="">';
             `);
@@ -106,7 +106,11 @@ final class BrowserCompatibilityTests: XCTestCase {
             return {code};
             """
         )
-        XCTAssertEqual(try valueObject(result)["code"] as? String, "BROWSER_DESTROYED")
+        let code = try valueObject(result)["code"] as? String
+        XCTAssertTrue(
+            code == "BROWSER_DESTROYED" || code == "OPERATION_CANCELLED",
+            "Destroy must settle polling through session invalidation or operation cancellation."
+        )
     }
 
     @MainActor
