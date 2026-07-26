@@ -13,6 +13,7 @@ import JavaScriptCore
 }
 
 @objcMembers
+@MainActor
 final class NativeBridge: NSObject, NativeBridgeExport {
     let Browser: BrowserBridgeNamespace
     let Storage: StorageBridgeNamespace
