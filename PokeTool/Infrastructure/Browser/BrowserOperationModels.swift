@@ -64,7 +64,8 @@ struct BrowserRequest: Sendable {
         guard timeout > 0, body?.count ?? 0 <= maximumBodyBytes else {
             throw BrowserError.unsupportedOperation("Invalid timeout or request body too large")
         }
-        guard (headers.keys + headers.values).allSatisfy({ !$0.contains("\n") && !$0.contains("\r") }) else {
+        let headerFields = Array(headers.keys) + Array(headers.values)
+        guard headerFields.allSatisfy({ !$0.contains("\n") && !$0.contains("\r") }) else {
             throw BrowserError.serializationFailed("Invalid HTTP header")
         }
         var request = URLRequest(url: url, cachePolicy: cachePolicy, timeoutInterval: timeout)
