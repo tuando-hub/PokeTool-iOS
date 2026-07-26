@@ -34,6 +34,10 @@ jobs:
           npm ci --ignore-scripts
           npm test
 
+      - name: Run Phone OTP Gateway tests
+        working-directory: Services/PhoneOtpGateway
+        run: npm test
+
       - name: Build for iOS Simulator
         run: |
           set -o pipefail
