@@ -22,7 +22,7 @@ enum BridgeErrorCode: String, Codable {
     case internalError = "INTERNAL_ERROR"
 }
 
-struct StructuredBridgeError: Codable, Equatable {
+struct StructuredBridgeError: Codable {
     let name: String
     let code: BridgeErrorCode
     let message: String
