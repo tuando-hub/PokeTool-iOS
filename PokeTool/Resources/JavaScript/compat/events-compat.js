@@ -5,7 +5,7 @@ const subscriptions = Object.create(null);
 let nextId = 1;
 
 function validName(name) {
-  return typeof name === "string" && /^(js|runtime|plugin|runner|flow|pokemon|jumpplus)\.[A-Za-z0-9._-]+$/.test(name);
+  return typeof name === "string" && /^(js|runtime|plugin|runner|flow|pokemon|jumpplus|jumpcs)\.[A-Za-z0-9._-]+$/.test(name);
 }
 function on(name, handler) {
   if (!validName(name) || typeof handler !== "function") throw new TypeError("Invalid event subscription.");

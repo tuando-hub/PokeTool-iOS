@@ -343,6 +343,21 @@ final class JavaScriptRuntime: BusinessRuntime {
             timeout: 10
         )
     }
+
+    func runDebugJumpCSSliceHarness() async throws -> String {
+        _ = try start()
+        defer { stop() }
+        return try await runAsyncTestScript(
+            """
+            const jumpcs=require("/modules/jumpcs/jumpcs-entry");
+            const store=require("/modules/jumpcs/jumpcs-store-url");
+            let invalid=null; try{store.validate("https://evil.test/?subscr_token=x");}catch(error){invalid=error.code;}
+            return {version:jumpcs.version,modes:jumpcs.modes,capabilities:jumpcs.capabilities,
+              safe:store.safe("https://jumpcs.shueisha.co.jp/shop/customer/menu.aspx?subscr_token=fixture"),invalid:invalid};
+            """,
+            timeout: 10
+        )
+    }
     #endif
 }
 

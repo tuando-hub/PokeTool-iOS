@@ -28,10 +28,12 @@ final class DashboardViewController: UIViewController {
         navigationItem.leftBarButtonItems = [
             UIBarButtonItem(title: "RUN", style: .done, target: self, action: #selector(runPokemonTasks)),
             UIBarButtonItem(title: "JUMP+", style: .done, target: self, action: #selector(runJumpPlusTasks)),
+            UIBarButtonItem(title: "JCS", style: .done, target: self, action: #selector(runJumpCSTasks)),
             UIBarButtonItem(title: "STOP", style: .plain, target: self, action: #selector(stopPokemonTasks))
         ]
         #if DEBUG
         navigationItem.rightBarButtonItems = [
+            UIBarButtonItem(title: "JCS", style: .plain, target: self, action: #selector(runJumpCSSliceTest)),
             UIBarButtonItem(
                 title: "Jump+", style: .plain,
                 target: self, action: #selector(runJumpPlusSliceTest)
@@ -112,6 +114,17 @@ final class DashboardViewController: UIViewController {
         present(alert, animated: true)
     }
 
+    @objc private func runJumpCSTasks() {
+        let alert = UIAlertController(title: "Run JumpCS tasks", message: "Paste JumpCS JSON. Phone provider and final order submit require explicit configuration.", preferredStyle: .alert)
+        alert.addTextField { field in field.placeholder = "[{\"id\":\"...\",\"mode\":\"jumpcs.buy\"}]"; field.autocapitalizationType = .none; field.autocorrectionType = .no; field.isSecureTextEntry = true }
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        alert.addAction(UIAlertAction(title: "Run", style: .default) { [weak self, weak alert] _ in
+            guard let json = alert?.textFields?.first?.text, !json.isEmpty else { return }
+            Task { @MainActor [weak self] in await self?.viewModel.runJumpCSTasks(json: json) }
+        })
+        present(alert, animated: true)
+    }
+
     #if DEBUG
     @objc private func runBridgeTest() {
         Task { @MainActor [weak self] in await self?.viewModel.runBridgeTest() }
@@ -136,6 +149,8 @@ final class DashboardViewController: UIViewController {
     @objc private func runJumpPlusSliceTest() {
         Task { @MainActor [weak self] in await self?.viewModel.runJumpPlusSliceTest() }
     }
+
+    @objc private func runJumpCSSliceTest() { Task { @MainActor [weak self] in await self?.viewModel.runJumpCSSliceTest() } }
 
     @objc private func runProductFlowTest() {
         Task { @MainActor [weak self] in await self?.viewModel.runProductFlowTest() }

@@ -1,0 +1,7 @@
+"use strict";
+const errors=require("./jumpcs-errors");
+function normalize(v){const d=String(v||"").replace(/\D/g,"");return d;}
+function mock(task){const p=task.options.mockPhoneProvider||{};return {async authenticate(){return {state:"AUTHENTICATED"};},async orderNumber(){if(p.orderError)throw errors.create("JUMPCS_PHONE_ORDER_FAILED","Mock phone order failed.",{step:"PHONE_ORDER"});return {orderId:p.orderId||"mock-order",pkey:p.pkey||"mock-pkey"};},async waitNumber(){if(!p.phone)throw errors.create("JUMPCS_PHONE_NUMBER_TIMEOUT","Mock phone number is unavailable.",{step:"PHONE_WAIT"});return {phone:normalize(p.phone),pkey:p.pkey||"mock-pkey"};},async waitOtp(){if(!p.otp)throw errors.create("JUMPCS_SMS_TIMEOUT","Mock SMS is unavailable.",{step:"SMS_WAIT"});return String(p.otp);},async cancelOrder(){return true;},async release(){return true;},diagnostics(){return {provider:"mock"};}};}
+function unconfigured(){const fail=()=>{throw errors.create("JUMPCS_PHONE_PROVIDER_UNAVAILABLE","Phone/SMS provider is not configured.",{step:"PHONE_PROVIDER",diagnostics:{provider:"requiresConfiguration"}});};return {authenticate:fail,orderNumber:fail,waitNumber:fail,waitOtp:fail,cancelOrder:async()=>true,release:async()=>true,diagnostics:()=>({provider:"requiresConfiguration"})};}
+function create(task){if(task.options.mockPhoneProvider)return mock(task);if(task.providers&&task.providers.smsService)return unconfigured();return unconfigured();}
+module.exports={normalize,create};

@@ -1,0 +1,5 @@
+"use strict";
+const Pages=require("./jumpcs-pages");const Actions=require("./jumpcs-actions");const errors=require("./jumpcs-errors");
+async function add(session,task,c){await Pages.assert(session.browser,"PRODUCT",{timeoutMs:10000,cancellationToken:c.cancellationToken});const qty=String((task.product&&task.product.quantity)||1);if(await session.browser.exists("#qty"))await session.browser.selectValue("#qty",qty);if(!await session.browser.exists("#cart_button"))throw errors.create("JUMPCS_PRODUCT_UNAVAILABLE","Product cannot be added to cart.",{step:"CART"});await Actions.click(session.browser,"#cart_button");await Pages.wait(session.browser,"CART",{timeoutMs:30000,cancellationToken:c.cancellationToken});return {status:"CART_READY",quantity:Number(qty)};}
+async function checkout(session,c){await Pages.assert(session.browser,"CART",{timeoutMs:5000,cancellationToken:c.cancellationToken});await Actions.click(session.browser,"button[name='submit.x'],input[name='submit.x']");return Pages.wait(session.browser,"DELIVERY",{timeoutMs:30000,cancellationToken:c.cancellationToken});}
+module.exports={add,checkout};

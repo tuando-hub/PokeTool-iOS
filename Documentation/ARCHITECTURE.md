@@ -1,5 +1,14 @@
 # PokeTool iOS Architecture
 
+## Phase 10: Jump Characters Store product slice
+
+`/modules/jumpcs/jumpcs-entry` adds the JumpCS product above the existing
+Runner, Web Flow Engine, Browser and infrastructure bridge. GraphQL auth and
+device/bearer state are account-isolated secrets; the browser receives only a
+validated store URL. Product/cart/payment transitions require URL, title and
+DOM signals. Phone/SMS is an injected provider boundary, final order submit is
+explicit-only, and JumpCS resources are cleaned on every task exit.
+
 ## Phase 9: Jump+ product slice
 
 `/modules/jumpplus/jumpplus-entry` is a separate product slice above Product

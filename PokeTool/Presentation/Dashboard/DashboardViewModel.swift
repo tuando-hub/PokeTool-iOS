@@ -94,6 +94,17 @@ final class DashboardViewModel {
         viewState.runtimeText = "Jump+ run: cancellation requested"
     }
 
+    func runJumpCSTasks(json: String) async {
+        viewState.runtimeText = "JumpCS run: validating..."
+        do {
+            let summary = try await productRuntimeService.start(tasksJSON: json, executorModuleID: "/modules/jumpcs/jumpcs-executor")
+            viewState.runtimeText = "JumpCS run: total=\(summary.total) succeeded=\(summary.succeeded) failed=\(summary.failed) cancelled=\(summary.cancelled) duration=\(summary.durationMs)ms"
+            viewState.isHealthy = summary.failed == 0 && summary.cancelled == 0
+        } catch { viewState.runtimeText = "JumpCS run failed: \(error.localizedDescription)"; viewState.isHealthy = false }
+    }
+
+    func stopJumpCSTasks() { productRuntimeService.stop(reason: "User requested JumpCS stop"); viewState.runtimeText = "JumpCS run: cancellation requested" }
+
     #if DEBUG
     func runBridgeTest() async {
         guard let runtime = runtimeFactory.makeRuntime() as? JavaScriptRuntime else {
@@ -187,6 +198,13 @@ final class DashboardViewModel {
             viewState.runtimeText = "Jump+ Slice Test failed: \(error.localizedDescription)"
             viewState.isHealthy = false
         }
+    }
+
+    func runJumpCSSliceTest() async {
+        guard let runtime = runtimeFactory.makeRuntime() as? JavaScriptRuntime else { viewState.runtimeText = "JumpCS Slice Test: runtime unavailable"; return }
+        viewState.runtimeText = "JumpCS Slice Test: running..."
+        do { viewState.runtimeText = "JumpCS Slice Test: \(try await runtime.runDebugJumpCSSliceHarness())"; viewState.isHealthy = true }
+        catch { viewState.runtimeText = "JumpCS Slice Test failed: \(error.localizedDescription)"; viewState.isHealthy = false }
     }
 
     func runProductFlowTest() async {
