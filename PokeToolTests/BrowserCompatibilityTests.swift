@@ -26,9 +26,9 @@ final class BrowserCompatibilityTests: XCTestCase {
             const exists = await web.waitExists(browser, "#email", 1000);
             await web.setValue(browser, "#email", "test@example.com");
             const value = await web.evalJS(browser, "document.querySelector('#email').value");
+            const text = await web.waitText(browser, "Compat", 1000);
             await web.evalJS(browser, "document.querySelector('#visible').remove()");
             const gone = await web.waitGone(browser, "#visible", 1000);
-            const text = await web.waitText(browser, "Compat", 1000);
             const urlString = await web.waitURL(browser, "about:", 1000);
             const urlRegex = await web.waitURL(browser, /^about:/, 1000);
             const title = await web.waitTitle(browser, /Compat Test/, 1000);
