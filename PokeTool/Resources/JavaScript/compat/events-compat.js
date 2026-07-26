@@ -21,7 +21,7 @@ function off(id) {
 }
 async function emit(name, payload) {
   if (!validName(name)) throw Object.assign(new Error("Event name is forbidden."), {code:"EVENT_FORBIDDEN_NAME"});
-  const event = await Native.Events.emit(name, payload === undefined ? null : payload);
+  const event = await bridge.invoke("Events", "emit", [name, payload === undefined ? null : payload]);
   Object.keys(subscriptions).forEach(function (id) {
     const entry = subscriptions[id];
     if (entry.name === name) {
