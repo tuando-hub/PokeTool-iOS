@@ -20,7 +20,10 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         self.window = window
         self.dependencyContainer = container
         self.appCoordinator = coordinator
-        coordinator.start()
+        if let args = ProcessInfo.processInfo.arguments.firstIndex(of: "-screenshotState"), args + 1 < ProcessInfo.processInfo.arguments.count {
+            window.rootViewController = UINavigationController(rootViewController: ScreenshotStateViewController(state: ProcessInfo.processInfo.arguments[args + 1]))
+            window.makeKeyAndVisible()
+        } else { coordinator.start() }
     }
 
     func sceneDidDisconnect(_ scene: UIScene) {
