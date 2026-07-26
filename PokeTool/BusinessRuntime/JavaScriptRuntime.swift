@@ -17,10 +17,12 @@ enum JavaScriptRuntimeError: LocalizedError {
 
 final class JavaScriptRuntime: BusinessRuntime {
     private let bridge: NativeBridge
+    private let logger: Logging
     private var context: JSContext?
 
-    init(bridge: NativeBridge) {
+    init(bridge: NativeBridge, logger: Logging) {
         self.bridge = bridge
+        self.logger = logger
     }
 
     func start() throws -> RuntimeHealth {
@@ -61,11 +63,26 @@ final class JavaScriptRuntime: BusinessRuntime {
         }
 
         self.context = context
+        logger.log(.info, category: .runtime, message: "JavaScriptCore runtime started")
         return RuntimeHealth(version: version, phase: phase)
     }
 
     func stop() {
         context?.exceptionHandler = nil
         context = nil
+    }
+}
+
+final class JavaScriptRuntimeFactory: BusinessRuntimeFactory {
+    private let bridgeFactory: NativeBridgeFactory
+    private let logger: Logging
+
+    init(bridgeFactory: NativeBridgeFactory, logger: Logging) {
+        self.bridgeFactory = bridgeFactory
+        self.logger = logger
+    }
+
+    func makeRuntime() -> BusinessRuntime {
+        JavaScriptRuntime(bridge: bridgeFactory.makeBridge(), logger: logger)
     }
 }

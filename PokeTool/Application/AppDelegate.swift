@@ -3,11 +3,13 @@ import UserNotifications
 
 @main
 final class AppDelegate: UIResponder, UIApplicationDelegate {
+    private let notificationDelegate = NotificationDelegate()
+
     func application(
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
-        UNUserNotificationCenter.current().delegate = NotificationDelegate.shared
+        UNUserNotificationCenter.current().delegate = notificationDelegate
         return true
     }
 
@@ -19,4 +21,3 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         UISceneConfiguration(name: "Default Configuration", sessionRole: connectingSceneSession.role)
     }
 }
-

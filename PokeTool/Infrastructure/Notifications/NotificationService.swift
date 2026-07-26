@@ -18,8 +18,6 @@ final class NotificationService {
 }
 
 final class NotificationDelegate: NSObject, UNUserNotificationCenterDelegate {
-    static let shared = NotificationDelegate()
-
     func userNotificationCenter(
         _ center: UNUserNotificationCenter,
         willPresent notification: UNNotification
@@ -27,4 +25,3 @@ final class NotificationDelegate: NSObject, UNUserNotificationCenterDelegate {
         [.banner, .sound]
     }
 }
-

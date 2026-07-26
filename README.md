@@ -10,11 +10,13 @@ Native iOS browser automation platform built with UIKit, WKWebView, JavaScriptCo
 - No Storyboard
 - No SwiftUI
 
-## Phase 0
+## Phase 0.5
 
-Phase 0 provides the native application shell, dependency container, programmatic UIKit navigation, MVVM boundaries, a WKWebView browser host, a JavaScriptCore runtime, a typed native bridge, file/network/keychain/background/notification services, and GitHub Actions IPA packaging.
+Phase 0.5 refines the platform boundaries with BrowserManager/BrowserPool/BrowserSession ownership, namespaced Native Bridge objects, a shared EventBus, unified logging, explicit dependency lifecycles, and plugin-facing interfaces.
 
 No PokeTool business mode is included in this phase.
+
+The browser layer intentionally has no load, evaluate, click, selector, or automation API yet. See [Documentation/ARCHITECTURE.md](Documentation/ARCHITECTURE.md).
 
 ## Local build
 
@@ -28,4 +30,3 @@ Unsigned IPA generation requires no secrets. For optional signed IPA generation,
 - `IOS_CERTIFICATE_PASSWORD`
 - `IOS_PROVISIONING_PROFILE_BASE64`
 - `IOS_SIGNING_IDENTITY`
-

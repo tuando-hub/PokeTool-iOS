@@ -12,12 +12,12 @@ final class DashboardViewModel {
     @Published private(set) var viewState = ViewState()
 
     private let stateStore: AppStateStore
-    private let runtime: BusinessRuntime
+    private let runtimeFactory: BusinessRuntimeFactory
     private var cancellables = Set<AnyCancellable>()
 
-    init(stateStore: AppStateStore, runtime: BusinessRuntime) {
+    init(stateStore: AppStateStore, runtimeFactory: BusinessRuntimeFactory) {
         self.stateStore = stateStore
-        self.runtime = runtime
+        self.runtimeFactory = runtimeFactory
 
         stateStore.publisher
             .receive(on: DispatchQueue.main)
@@ -29,7 +29,9 @@ final class DashboardViewModel {
 
     func start() {
         do {
+            let runtime = runtimeFactory.makeRuntime()
             let health = try runtime.start()
+            runtime.stop()
             stateStore.update {
                 $0.runtimeStatus = .ready(version: health.version)
             }
@@ -54,4 +56,3 @@ final class DashboardViewModel {
         }
     }
 }
-

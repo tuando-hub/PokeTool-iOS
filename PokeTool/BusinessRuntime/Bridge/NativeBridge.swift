@@ -2,33 +2,65 @@ import Foundation
 import JavaScriptCore
 
 @objc protocol NativeBridgeExport: JSExport {
-    func log(_ level: String, _ message: String)
-    func appVersion() -> String
+    var Browser: BrowserBridgeNamespace { get }
+    var Storage: StorageBridgeNamespace { get }
+    var Logger: LoggerBridgeNamespace { get }
+    var Network: NetworkBridgeNamespace { get }
+    var System: SystemBridgeNamespace { get }
+    var Notification: NotificationBridgeNamespace { get }
+    var Device: DeviceBridgeNamespace { get }
+    var Events: EventsBridgeNamespace { get }
 }
 
+@objcMembers
 final class NativeBridge: NSObject, NativeBridgeExport {
-    private let browser: BrowserAutomating
-    private let fileStore: FileStore
-    private let network: NetworkClient
-    private let keychain: KeychainStore
+    let Browser: BrowserBridgeNamespace
+    let Storage: StorageBridgeNamespace
+    let Logger: LoggerBridgeNamespace
+    let Network: NetworkBridgeNamespace
+    let System: SystemBridgeNamespace
+    let Notification: NotificationBridgeNamespace
+    let Device: DeviceBridgeNamespace
+    let Events: EventsBridgeNamespace
 
     init(
-        browser: BrowserAutomating,
-        fileStore: FileStore,
-        network: NetworkClient,
-        keychain: KeychainStore
+        Browser: BrowserBridgeNamespace,
+        Storage: StorageBridgeNamespace,
+        Logger: LoggerBridgeNamespace,
+        Network: NetworkBridgeNamespace,
+        System: SystemBridgeNamespace,
+        Notification: NotificationBridgeNamespace,
+        Device: DeviceBridgeNamespace,
+        Events: EventsBridgeNamespace
     ) {
-        self.browser = browser
-        self.fileStore = fileStore
-        self.network = network
-        self.keychain = keychain
+        self.Browser = Browser
+        self.Storage = Storage
+        self.Logger = Logger
+        self.Network = Network
+        self.System = System
+        self.Notification = Notification
+        self.Device = Device
+        self.Events = Events
+    }
+}
+
+final class NativeBridgeFactory {
+    private let logger: Logging
+
+    init(logger: Logging) {
+        self.logger = logger
     }
 
-    func log(_ level: String, _ message: String) {
-        Logger.shared.write(level: level, message: message)
-    }
-
-    func appVersion() -> String {
-        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0.0.0"
+    func makeBridge() -> NativeBridge {
+        NativeBridge(
+            Browser: BrowserBridgeNamespace(),
+            Storage: StorageBridgeNamespace(),
+            Logger: LoggerBridgeNamespace(logger: logger),
+            Network: NetworkBridgeNamespace(),
+            System: SystemBridgeNamespace(),
+            Notification: NotificationBridgeNamespace(),
+            Device: DeviceBridgeNamespace(),
+            Events: EventsBridgeNamespace()
+        )
     }
 }

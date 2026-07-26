@@ -1,16 +1,23 @@
 import Foundation
 import WebKit
 
+@MainActor
 final class BrowserViewModel {
-    private let browserService: WebViewAutomationService
+    private let browserManager: BrowserManager
+    private var browserId: BrowserID?
 
-    init(browserService: WebViewAutomationService) {
-        self.browserService = browserService
+    init(browserManager: BrowserManager) {
+        self.browserManager = browserManager
     }
 
-    @MainActor
     func webView() -> WKWebView {
-        browserService.visibleWebView
+        if let browserId,
+           let webView = browserManager.presentationWebView(for: browserId) {
+            return webView
+        }
+
+        let id = browserManager.createBrowser(metadata: .presentation)
+        browserId = id
+        return browserManager.presentationWebView(for: id) ?? WKWebView()
     }
 }
-

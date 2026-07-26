@@ -1,5 +1,6 @@
 import UIKit
 
+@MainActor
 final class AppCoordinator {
     private let window: UIWindow
     private let container: DependencyContainer
@@ -13,7 +14,7 @@ final class AppCoordinator {
         let dashboard = DashboardViewController(
             viewModel: DashboardViewModel(
                 stateStore: container.appStateStore,
-                runtime: container.javaScriptRuntime
+                runtimeFactory: container.runtimeFactory
             )
         )
         dashboard.tabBarItem = UITabBarItem(
@@ -23,7 +24,7 @@ final class AppCoordinator {
         )
 
         let browser = BrowserViewController(
-            viewModel: BrowserViewModel(browserService: container.browserService)
+            viewModel: BrowserViewModel(browserManager: container.browserManager)
         )
         browser.tabBarItem = UITabBarItem(
             title: "Browser",
@@ -42,4 +43,3 @@ final class AppCoordinator {
         window.makeKeyAndVisible()
     }
 }
-

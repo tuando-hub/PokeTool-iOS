@@ -1,9 +1,12 @@
 import Foundation
 
+@MainActor
 final class DependencyContainer {
     let appStateStore: AppStateStore
-    let browserService: WebViewAutomationService
-    let javaScriptRuntime: JavaScriptRuntime
+    let eventBus: EventBus
+    let logger: Logging
+    let browserManager: BrowserManager
+    let runtimeFactory: BusinessRuntimeFactory
     let fileStore: FileStore
     let networkClient: NetworkClient
     let keychainStore: KeychainStore
@@ -12,20 +15,19 @@ final class DependencyContainer {
 
     init() {
         appStateStore = AppStateStore()
-        browserService = WebViewAutomationService()
+        eventBus = NativeEventBus()
+        logger = UnifiedLogger()
+        browserManager = BrowserManager(eventBus: eventBus, logger: logger)
         fileStore = FileStore()
         networkClient = NetworkClient()
         keychainStore = KeychainStore()
         backgroundService = BackgroundService()
         notificationService = NotificationService()
 
-        let bridge = NativeBridge(
-            browser: browserService,
-            fileStore: fileStore,
-            network: networkClient,
-            keychain: keychainStore
+        let bridgeFactory = NativeBridgeFactory(logger: logger)
+        runtimeFactory = JavaScriptRuntimeFactory(
+            bridgeFactory: bridgeFactory,
+            logger: logger
         )
-        javaScriptRuntime = JavaScriptRuntime(bridge: bridge)
     }
 }
-

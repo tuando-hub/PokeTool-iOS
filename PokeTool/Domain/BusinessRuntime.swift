@@ -10,3 +10,6 @@ protocol BusinessRuntime: AnyObject {
     func stop()
 }
 
+protocol BusinessRuntimeFactory {
+    func makeRuntime() -> BusinessRuntime
+}
