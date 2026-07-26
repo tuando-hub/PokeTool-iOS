@@ -112,7 +112,7 @@
 
   const runtime = {
     version: "0.1.0",
-    phase: 4,
+    phase: 5,
     healthCheck: function () {
       return {
         ok: true, runtime: "JavaScriptCore", phase: this.phase,
@@ -129,4 +129,11 @@
   };
 
   global.PokeToolRuntime = runtime;
+  runtime.environment = Object.freeze({
+    engine: "JavaScriptCore",
+    runtimeId: Native.Runtime.runtimeID
+  });
+  runtime.modules = global.__PokeToolModuleSystem.modules;
+  require("/compat/browser-compat");
+  module.exports = runtime;
 })(this);

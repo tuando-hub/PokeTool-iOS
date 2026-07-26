@@ -73,6 +73,25 @@ final class DashboardViewModel {
             viewState.isHealthy = false
         }
     }
+
+    func runModuleInspector() {
+        guard let runtime = runtimeFactory.makeRuntime() as? JavaScriptRuntime else {
+            viewState.runtimeText = "Module Inspector: runtime unavailable"
+            return
+        }
+        do {
+            _ = try runtime.start()
+            let selfTest = try runtime.runDebugModuleSelfTest()
+            let diagnostics = runtime.moduleDiagnostics()
+            runtime.stop()
+            viewState.runtimeText = "Module Inspector\nSelf-test: \(selfTest)\nDiagnostics: \(diagnostics)"
+            viewState.isHealthy = true
+        } catch {
+            runtime.stop()
+            viewState.runtimeText = "Module Inspector failed: \(error.localizedDescription)"
+            viewState.isHealthy = false
+        }
+    }
     #endif
 
     private func render(_ state: AppState) {

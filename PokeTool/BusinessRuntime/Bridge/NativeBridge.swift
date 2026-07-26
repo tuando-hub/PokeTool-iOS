@@ -10,6 +10,7 @@ import JavaScriptCore
     var Notification: NotificationBridgeNamespace { get }
     var Device: DeviceBridgeNamespace { get }
     var Events: EventsBridgeNamespace { get }
+    var Runtime: RuntimeBridgeNamespace { get }
 }
 
 @objcMembers
@@ -23,6 +24,7 @@ final class NativeBridge: NSObject, NativeBridgeExport {
     let Notification: NotificationBridgeNamespace
     let Device: DeviceBridgeNamespace
     let Events: EventsBridgeNamespace
+    let Runtime: RuntimeBridgeNamespace
 
     init(
         Browser: BrowserBridgeNamespace,
@@ -32,7 +34,8 @@ final class NativeBridge: NSObject, NativeBridgeExport {
         System: SystemBridgeNamespace,
         Notification: NotificationBridgeNamespace,
         Device: DeviceBridgeNamespace,
-        Events: EventsBridgeNamespace
+        Events: EventsBridgeNamespace,
+        Runtime: RuntimeBridgeNamespace
     ) {
         self.Browser = Browser
         self.Storage = Storage
@@ -42,14 +45,17 @@ final class NativeBridge: NSObject, NativeBridgeExport {
         self.Notification = Notification
         self.Device = Device
         self.Events = Events
+        self.Runtime = Runtime
     }
 
     func stop() {
         Browser.stop()
+        Runtime.stop()
     }
 
     func prepareForStart() {
         Browser.prepareForStart()
+        Runtime.prepareForStart()
     }
 }
 
@@ -64,7 +70,9 @@ final class NativeBridgeFactory {
     }
 
     func makeBridge() -> NativeBridge {
-        NativeBridge(
+        let limits = JavaScriptModuleLimits()
+        let resolver = JavaScriptModuleResolver(limits: limits)
+        return NativeBridge(
             Browser: BrowserBridgeNamespace(
                 service: BrowserBridgeService(browserManager: browserManager)
             ),
@@ -74,7 +82,15 @@ final class NativeBridgeFactory {
             System: SystemBridgeNamespace(),
             Notification: NotificationBridgeNamespace(),
             Device: DeviceBridgeNamespace(),
-            Events: EventsBridgeNamespace()
+            Events: EventsBridgeNamespace(),
+            Runtime: RuntimeBridgeNamespace(
+                resolver: resolver,
+                sourceProvider: BundleJavaScriptModuleSourceProvider(
+                    bundle: .main, limits: limits
+                ),
+                limits: limits,
+                logger: logger
+            )
         )
     }
 }

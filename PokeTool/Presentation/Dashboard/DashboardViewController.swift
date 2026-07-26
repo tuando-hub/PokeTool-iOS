@@ -28,6 +28,10 @@ final class DashboardViewController: UIViewController {
         #if DEBUG
         navigationItem.rightBarButtonItems = [
             UIBarButtonItem(
+                title: "Modules", style: .plain,
+                target: self, action: #selector(runModuleInspector)
+            ),
+            UIBarButtonItem(
                 title: "Web Compat Test", style: .plain,
                 target: self, action: #selector(runWebCompatTest)
             ),
@@ -46,6 +50,10 @@ final class DashboardViewController: UIViewController {
 
     @objc private func runWebCompatTest() {
         Task { @MainActor [weak self] in await self?.viewModel.runWebCompatTest() }
+    }
+
+    @objc private func runModuleInspector() {
+        viewModel.runModuleInspector()
     }
     #endif
 

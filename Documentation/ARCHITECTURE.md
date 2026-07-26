@@ -1,5 +1,25 @@
 # PokeTool iOS Architecture
 
+## Phase 5: JavaScript Runtime Module System
+
+```text
+Application -> BusinessRuntimeFactory -> JavaScriptRuntime (@MainActor)
+    -> Module Loader
+        -> Resolver
+        -> Bundle Source Provider
+        -> Per-runtime Cache
+        -> Dependency Graph
+        -> CommonJS Wrapper
+    -> JSContext
+```
+
+The native module boundary only returns controlled application-bundle resources
+and owns timer lifecycle. It does not access BrowserManager, expose arbitrary
+filesystem paths, or load remote code. `bootstrap.js` is a CommonJS entry module;
+`/compat/browser-compat.js` preserves the Phase 4 `PokeToolRuntime.web` surface.
+See [MODULE_SYSTEM.md](MODULE_SYSTEM.md) for resolution, lifecycle, limits,
+debugging, security, and Phase 5/Phase 6 boundaries.
+
 ## Phase 4: Browser Compatibility Layer
 
 `browser-compat.js` adds `PokeToolRuntime.web` above the Phase 3 BrowserHandle.

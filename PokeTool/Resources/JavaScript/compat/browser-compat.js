@@ -285,4 +285,5 @@
     reloadOnce: reloadOnce,
     safeDestroy: safeDestroy
   });
+  module.exports = PokeToolRuntime.web;
 })(this);

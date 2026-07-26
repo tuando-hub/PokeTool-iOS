@@ -3,14 +3,14 @@ import JavaScriptCore
 
 enum JavaScriptRuntimeError: LocalizedError {
     case missingBootstrap
-    case missingCompatibilityLayer
+    case missingModuleLoader
     case evaluationFailed(String)
     case invalidHealthResponse
 
     var errorDescription: String? {
         switch self {
         case .missingBootstrap: return "JavaScript bootstrap resource is missing."
-        case .missingCompatibilityLayer: return "Browser compatibility resource is missing."
+        case .missingModuleLoader: return "JavaScript module loader resource is missing."
         case .evaluationFailed(let message): return "JavaScript evaluation failed: \(message)"
         case .invalidHealthResponse: return "JavaScript runtime returned an invalid health response."
         }
@@ -42,28 +42,28 @@ final class JavaScriptRuntime: BusinessRuntime {
         }
         context.setObject(bridge, forKeyedSubscript: "Native" as NSString)
 
-        let bootstrapURL =
-            Bundle.main.url(forResource: "bootstrap", withExtension: "js", subdirectory: "JavaScript")
-            ?? Bundle.main.url(forResource: "bootstrap", withExtension: "js")
+        #if DEBUG
+        context.setObject(true, forKeyedSubscript: "__POKETOOL_DEBUG__" as NSString)
+        #else
+        context.setObject(false, forKeyedSubscript: "__POKETOOL_DEBUG__" as NSString)
+        #endif
 
-        guard let url = bootstrapURL,
-              let source = try? String(contentsOf: url, encoding: .utf8) else {
-            throw JavaScriptRuntimeError.missingBootstrap
+        let loaderCandidates = [
+            Bundle.main.resourceURL?.appendingPathComponent("JavaScript/runtime/module-loader.js"),
+            Bundle.main.resourceURL?.appendingPathComponent("runtime/module-loader.js"),
+            Bundle.main.url(forResource: "module-loader", withExtension: "js")
+        ].compactMap { $0 }
+        guard let loaderURL = loaderCandidates.first(where: {
+                  FileManager.default.fileExists(atPath: $0.path)
+              }),
+              let loaderSource = try? String(contentsOf: loaderURL, encoding: .utf8) else {
+            throw JavaScriptRuntimeError.missingModuleLoader
         }
-
-        context.evaluateScript(source, withSourceURL: url)
+        context.evaluateScript(loaderSource, withSourceURL: URL(string: "poketool://runtime/module-loader.js"))
         if let exceptionMessage {
             throw JavaScriptRuntimeError.evaluationFailed(exceptionMessage)
         }
-
-        let compatibilityURL =
-            Bundle.main.url(forResource: "browser-compat", withExtension: "js", subdirectory: "JavaScript")
-            ?? Bundle.main.url(forResource: "browser-compat", withExtension: "js")
-        guard let compatibilityURL,
-              let compatibilitySource = try? String(contentsOf: compatibilityURL, encoding: .utf8) else {
-            throw JavaScriptRuntimeError.missingCompatibilityLayer
-        }
-        context.evaluateScript(compatibilitySource, withSourceURL: compatibilityURL)
+        context.evaluateScript("require('/bootstrap')")
         if let exceptionMessage {
             throw JavaScriptRuntimeError.evaluationFailed(exceptionMessage)
         }
@@ -84,6 +84,7 @@ final class JavaScriptRuntime: BusinessRuntime {
     }
 
     func stop() {
+        context?.evaluateScript("__PokeToolModuleSystem && __PokeToolModuleSystem.stop()")
         bridge.stop()
         context?.exceptionHandler = nil
         context = nil
@@ -93,6 +94,8 @@ final class JavaScriptRuntime: BusinessRuntime {
     func evaluateForTesting(_ source: String) -> JSValue? {
         context?.evaluateScript(source)
     }
+
+    var activeTimerCountForTesting: Int { bridge.Runtime.activeTimerCount() }
 
     func runDebugBrowserBridgeHarness() async throws -> String {
         _ = try start()
@@ -190,6 +193,30 @@ final class JavaScriptRuntime: BusinessRuntime {
             """,
             timeout: 60
         )
+    }
+
+    func moduleDiagnostics() -> String {
+        context?.evaluateScript("JSON.stringify(__PokeToolModuleSystem.diagnostics())")?.toString()
+            ?? "{}"
+    }
+
+    func runDebugModuleSelfTest() throws -> String {
+        guard let value = context?.evaluateScript(
+            """
+            (function () {
+              const named = require("/modules/fixtures/named-exports");
+              const replaced = require("/modules/fixtures/replace-module-exports");
+              const circular = require("/modules/fixtures/circular-a");
+              return JSON.stringify({
+                named: named.answer, replaced: replaced.value,
+                circular: circular.name, diagnostics: PokeToolRuntime.modules.graph()
+              });
+            })()
+            """
+        )?.toString() else {
+            throw JavaScriptRuntimeError.evaluationFailed("Module self-test did not return a result")
+        }
+        return value
     }
     #endif
 }
