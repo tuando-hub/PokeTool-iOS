@@ -73,7 +73,8 @@ jobs:
               xcrun xcresulttool get test-results summary \
                 --path "$RUNNER_TEMP/PokeToolTests.xcresult" \
                 2>/dev/null \
-                | tail -60 \
+                | grep -E '"(title|message|testName|failureText|result|failedTests|errorCount|warningCount|status)"' \
+                | head -80 \
                 | while IFS= read -r line; do echo "::error::$line"; done
             fi
             MATCHES=$(grep -E '(^| )error:|:[0-9]+:[0-9]+: error:|Test Case.*failed|failed -|Async JS failed|JavaScript.*timed out|Unable to find a device' \
