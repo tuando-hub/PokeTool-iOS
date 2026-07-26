@@ -115,7 +115,7 @@ final class PokemonVerticalSliceTests: XCTestCase {
 
     @MainActor private func makeRuntime() throws -> JavaScriptRuntime {
         let runtime = try XCTUnwrap(DependencyContainer().runtimeFactory.makeRuntime() as? JavaScriptRuntime)
-        XCTAssertEqual(try runtime.start().phase, 8)
+        XCTAssertEqual(try runtime.start().phase, 9)
         return runtime
     }
     private func valueObject(_ result: String) throws -> [String: Any] {

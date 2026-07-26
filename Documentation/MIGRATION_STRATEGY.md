@@ -1,5 +1,10 @@
 # Migration Strategy
 
+Phase 9 applies the vertical-slice strategy to Shonen Jump+. Audited service
+logic was split into registration, login, page, payment, and result modules.
+Jump Characters Store token/device emulation was intentionally not migrated.
+Fixed long waits were replaced by bounded state verification.
+
 Phase 8 is the first real-site vertical slice. Old JSBox sources were audited
 for active modes, URLs, selectors, form data, OTP modes and result intent. The
 new code uses Promise operations and verified transitions. It intentionally

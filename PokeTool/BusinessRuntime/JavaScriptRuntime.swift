@@ -320,6 +320,29 @@ final class JavaScriptRuntime: BusinessRuntime {
             timeout: 10
         )
     }
+
+    func runDebugJumpPlusSliceHarness() async throws -> String {
+        _ = try start()
+        defer { stop() }
+        return try await runAsyncTestScript(
+            """
+            const jumpplus=require("/modules/jumpplus/jumpplus-entry");
+            const pages=require("/modules/jumpplus/jumpplus-pages");
+            const state={url:"https://shonenjumpplus.com/",
+              title:"Shonen Jump Plus",text:"ログイン／新規登録"};
+            const browser={
+              url:async()=>state.url,title:async()=>state.title,readyState:async()=>"complete",
+              text:async()=>state.text,exists:async()=>true,
+              query:async()=>({visible:true,width:120,height:32}),
+              evaluate:async()=>true
+            };
+            const verification=await pages.inspect(browser,pages.pages.HOME);
+            return {version:jumpplus.version,modes:jumpplus.modes,
+              capabilities:jumpplus.capabilities,homeDescriptor:verification};
+            """,
+            timeout: 10
+        )
+    }
     #endif
 }
 

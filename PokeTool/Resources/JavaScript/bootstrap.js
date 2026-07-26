@@ -122,7 +122,7 @@
 
   const runtime = {
     version: "0.1.0",
-    phase: 8,
+    phase: 9,
     healthCheck: function () {
       return {
         ok: true, runtime: "JavaScriptCore", phase: this.phase,

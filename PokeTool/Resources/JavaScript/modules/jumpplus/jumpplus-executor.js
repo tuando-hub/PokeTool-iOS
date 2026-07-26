@@ -1,0 +1,12 @@
+"use strict";
+const Task=require("./jumpplus-task-schema");
+const Registry=require("./jumpplus-mode-registry");
+const Session=require("./jumpplus-session");
+const Signup=require("./jumpplus-signup");
+const Login=require("./jumpplus-login");
+const Payment=require("./jumpplus-payment");
+const Result=require("./jumpplus-result");
+const errors=require("./jumpplus-errors");
+const security=require("./jumpplus-security");
+async function execute(raw,context){const task=Task.validate(raw);const startedAt=Date.now();let session;let output;try{session=await Session.create(task);await PokeToolRuntime.events.emit("jumpplus.task.started",{taskId:task.id,mode:task.mode});const mode=Registry.resolve(task.mode);if(mode==="register"){output=await Signup.register(session,task,context);if(!output.existing)await Login.login(session,task,context);}else if(mode==="login"){output=await Login.login(session,task,context);}else{if(task.options.createIfNeeded){const registration=await Signup.register(session,task,context);output={registration};}await Login.login(session,task,context);const premium=await Payment.premium(session,task,context);if(premium.status==="ALREADY_SUBSCRIBED")output=premium;else if(mode==="premium")output=premium;else{await Payment.openMethod(session,task,context);await Payment.selectCredit(session,task,context);const safePayment=await Payment.fill(session,task,context);await Payment.review(session,task,context);output=await Payment.finalSubmit(session,task,context);output.data=Object.assign({},output.data||{},{paymentMethod:safePayment.method});}}const result=Result.make(task,output.status,output.code||null,output.message,startedAt,output.data,{history:session.history});await Result.persist(context.correlationId,result);await PokeToolRuntime.events.emit("jumpplus.task.completed",{taskId:task.id,status:result.status});return result;}catch(rawError){const error=errors.wrap(rawError,{step:rawError&&rawError.step});const result=Result.make(task,error.code==="JUMPPLUS_CANCELLED"?"CANCELLED":"FAILED",error.code,error.message,startedAt,null,{step:error.step,causeCode:error.causeCode,history:session&&session.history||[]});try{await Result.persist(context.correlationId,result);}catch(_){}await PokeToolRuntime.events.emit(error.code==="JUMPPLUS_CANCELLED"?"jumpplus.task.cancelled":"jumpplus.task.failed",{taskId:task.id,code:error.code});throw Object.assign(error,{jumpPlusResult:result});}finally{security.clearPayment(task.input&&task.input.payment);await Session.destroy(session);}}
+module.exports=execute;

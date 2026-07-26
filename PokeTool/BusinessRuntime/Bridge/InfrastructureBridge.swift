@@ -575,7 +575,7 @@ final class NotificationBridgeService: BaseInfrastructureService {
 final class EventsBridgeService: BaseInfrastructureService {
     private let eventBus: EventBus
     override var capabilities: [String: Any] {
-        ["emit": true, "allowedPrefixes": ["js.", "runtime.", "plugin.", "runner.", "flow.", "pokemon."],
+        ["emit": true, "allowedPrefixes": ["js.", "runtime.", "plugin.", "runner.", "flow.", "pokemon.", "jumpplus."],
          "nativeSubscriptions": false, "compatibilitySubscriptions": "runtimeLocal"]
     }
     init(eventBus: EventBus) { self.eventBus = eventBus; super.init(namespace: "Events") }
@@ -583,7 +583,7 @@ final class EventsBridgeService: BaseInfrastructureService {
         try checkRunning(method)
         guard method == "emit" else { return try await super.perform(method: method, arguments: arguments) }
         let name = try string(arguments, 0, method)
-        guard ["js.", "runtime.", "plugin.", "runner.", "flow.", "pokemon."].contains(where: name.hasPrefix) else {
+        guard ["js.", "runtime.", "plugin.", "runner.", "flow.", "pokemon.", "jumpplus."].contains(where: name.hasPrefix) else {
             throw failure("EVENT_FORBIDDEN_NAME", "JavaScript cannot emit reserved native events.", method)
         }
         let payload = arguments.indices.contains(1) ? arguments[1] : NSNull()

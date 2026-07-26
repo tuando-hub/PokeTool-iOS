@@ -1,5 +1,10 @@
 # Product Runtime
 
+Phase 9 adds a Jump+ registry/executor alongside the Pokémon executor. The
+application explicitly selects the executor module, so products do not load or
+mutate one another. Jump+ reuses Runner cancellation, safe events, atomic
+result storage, and deterministic runtime shutdown.
+
 Phase 8 extends the sequential task model with JSON-compatible `account`,
 `input`, and `options` for the Pokemon executor. Those fields remain in memory;
 persisted Pokemon results are independently redacted. Runner cancellation

@@ -72,6 +72,28 @@ final class DashboardViewModel {
         viewState.runtimeText = "Pokemon run: cancellation requested"
     }
 
+    func runJumpPlusTasks(json: String) async {
+        viewState.runtimeText = "Jump+ run: validating..."
+        do {
+            let summary = try await productRuntimeService.start(
+                tasksJSON: json,
+                executorModuleID: "/modules/jumpplus/jumpplus-executor"
+            )
+            viewState.runtimeText =
+                "Jump+ run: total=\(summary.total) succeeded=\(summary.succeeded) " +
+                "failed=\(summary.failed) cancelled=\(summary.cancelled) duration=\(summary.durationMs)ms"
+            viewState.isHealthy = summary.failed == 0 && summary.cancelled == 0
+        } catch {
+            viewState.runtimeText = "Jump+ run failed: \(error.localizedDescription)"
+            viewState.isHealthy = false
+        }
+    }
+
+    func stopJumpPlusTasks() {
+        productRuntimeService.stop(reason: "User requested Jump+ stop")
+        viewState.runtimeText = "Jump+ run: cancellation requested"
+    }
+
     #if DEBUG
     func runBridgeTest() async {
         guard let runtime = runtimeFactory.makeRuntime() as? JavaScriptRuntime else {
@@ -148,6 +170,21 @@ final class DashboardViewModel {
             viewState.isHealthy = true
         } catch {
             viewState.runtimeText = "Pokemon Slice Test failed: \(error.localizedDescription)"
+            viewState.isHealthy = false
+        }
+    }
+
+    func runJumpPlusSliceTest() async {
+        guard let runtime = runtimeFactory.makeRuntime() as? JavaScriptRuntime else {
+            viewState.runtimeText = "Jump+ Slice Test: runtime unavailable"
+            return
+        }
+        viewState.runtimeText = "Jump+ Slice Test: running..."
+        do {
+            viewState.runtimeText = "Jump+ Slice Test: \(try await runtime.runDebugJumpPlusSliceHarness())"
+            viewState.isHealthy = true
+        } catch {
+            viewState.runtimeText = "Jump+ Slice Test failed: \(error.localizedDescription)"
             viewState.isHealthy = false
         }
     }

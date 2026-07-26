@@ -1,5 +1,13 @@
 # PokeTool iOS Architecture
 
+## Phase 9: Jump+ product slice
+
+`/modules/jumpplus/jumpplus-entry` is a separate product slice above Product
+Runner, Web Flow Engine, Browser, and GETOtp HTTPS service. Each task owns an
+isolated browser. URL, title, and characteristic DOM signals gate transitions.
+Signup/payment actions are one-shot, payment secrets are transient, final
+submit is explicit-only, and Jump Characters Store remains out of scope.
+
 ## Phase 8: Pokemon product slice
 
 `/modules/pokemon/pokemon-entry` sits above Product Runner and resolves six

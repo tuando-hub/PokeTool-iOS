@@ -1,0 +1,10 @@
+"use strict";
+const Pages=require("./jumpplus-pages");
+const errors=require("./jumpplus-errors");
+function cancel(context){context.cancellationToken&&context.cancellationToken.throwIfCancelled();}
+async function emit(name,task,data){return PokeToolRuntime.events.emit(name,Object.assign({taskId:task.id,mode:task.mode},data||{}));}
+async function open(session,page,url,context){cancel(context);await session.browser.load(url);const result=await Pages.wait(session.browser,page,{timeoutMs:30000,cancellationToken:context.cancellationToken});session.record(result);return result;}
+async function setVerified(browser,selector,value,sensitive){await browser.setValue(selector,value);const actual=await browser.query(selector,"value");if(sensitive?!String(actual||"").length:String(actual)!==String(value))throw errors.create("JUMPPLUS_PAGE_MISMATCH","A form field could not be verified.",{step:"FORM"});}
+async function clickText(browser,text,selector){const result=await browser.evaluate(`(function(){const visible=function(el){if(!el)return false;const r=el.getBoundingClientRect(),s=getComputedStyle(el);return r.width>0&&r.height>0&&s.display!=="none"&&s.visibility!=="hidden";};const roots=${selector?`Array.from(document.querySelectorAll(${JSON.stringify(selector)}))`:"Array.from(document.querySelectorAll('button,a,[role=button]'))"};const target=roots.find(function(el){return visible(el)&&String(el.innerText||el.textContent||"").replace(/\\s+/g,"").includes(${JSON.stringify(String(text).replace(/\s+/g,""))});});if(!target)return false;target.scrollIntoView({block:"center"});target.click();return true;})()`);return Boolean(result);}
+async function classify(browser){const value=await Pages.identify(browser);const map={CAPTCHA:"JUMPPLUS_CAPTCHA_REQUIRED",MAINTENANCE:"JUMPPLUS_MAINTENANCE",RATE_LIMITED:"JUMPPLUS_RATE_LIMITED"};if(map[value.page])throw errors.create(map[value.page],"Unexpected Jump Plus safety state.",{step:"PAGE_CLASSIFICATION"});return value;}
+module.exports={cancel,emit,open,setVerified,clickText,classify};

@@ -1,5 +1,10 @@
 # Robust Web Flow Engine
 
+Phase 9 reuses the engine without adding unrelated framework surface. Jump+
+descriptors combine exact/allowlisted URLs, title variants, and scoped form or
+navigation markers. Irreversible signup/payment actions are owned by product
+modules and are not included in retry policies.
+
 Pokemon descriptors are the first production catalog. Important states require
 URL, title and characteristic DOM signals. OTP receipt is not page success:
 registration, email confirmation and login still perform bounded destination
