@@ -3,13 +3,14 @@ import JavaScriptCore
 
 @objc protocol NativeBridgeExport: JSExport {
     var Browser: BrowserBridgeNamespace { get }
-    var Storage: StorageBridgeNamespace { get }
+    var Storage: InfrastructureBridgeNamespace { get }
+    var Keychain: InfrastructureBridgeNamespace { get }
     var Logger: LoggerBridgeNamespace { get }
-    var Network: NetworkBridgeNamespace { get }
-    var System: SystemBridgeNamespace { get }
-    var Notification: NotificationBridgeNamespace { get }
-    var Device: DeviceBridgeNamespace { get }
-    var Events: EventsBridgeNamespace { get }
+    var Network: InfrastructureBridgeNamespace { get }
+    var System: InfrastructureBridgeNamespace { get }
+    var Notification: InfrastructureBridgeNamespace { get }
+    var Device: InfrastructureBridgeNamespace { get }
+    var Events: InfrastructureBridgeNamespace { get }
     var Runtime: RuntimeBridgeNamespace { get }
 }
 
@@ -17,28 +18,31 @@ import JavaScriptCore
 @MainActor
 final class NativeBridge: NSObject, NativeBridgeExport {
     let Browser: BrowserBridgeNamespace
-    let Storage: StorageBridgeNamespace
+    let Storage: InfrastructureBridgeNamespace
+    let Keychain: InfrastructureBridgeNamespace
     let Logger: LoggerBridgeNamespace
-    let Network: NetworkBridgeNamespace
-    let System: SystemBridgeNamespace
-    let Notification: NotificationBridgeNamespace
-    let Device: DeviceBridgeNamespace
-    let Events: EventsBridgeNamespace
+    let Network: InfrastructureBridgeNamespace
+    let System: InfrastructureBridgeNamespace
+    let Notification: InfrastructureBridgeNamespace
+    let Device: InfrastructureBridgeNamespace
+    let Events: InfrastructureBridgeNamespace
     let Runtime: RuntimeBridgeNamespace
 
     init(
         Browser: BrowserBridgeNamespace,
-        Storage: StorageBridgeNamespace,
+        Storage: InfrastructureBridgeNamespace,
+        Keychain: InfrastructureBridgeNamespace,
         Logger: LoggerBridgeNamespace,
-        Network: NetworkBridgeNamespace,
-        System: SystemBridgeNamespace,
-        Notification: NotificationBridgeNamespace,
-        Device: DeviceBridgeNamespace,
-        Events: EventsBridgeNamespace,
+        Network: InfrastructureBridgeNamespace,
+        System: InfrastructureBridgeNamespace,
+        Notification: InfrastructureBridgeNamespace,
+        Device: InfrastructureBridgeNamespace,
+        Events: InfrastructureBridgeNamespace,
         Runtime: RuntimeBridgeNamespace
     ) {
         self.Browser = Browser
         self.Storage = Storage
+        self.Keychain = Keychain
         self.Logger = Logger
         self.Network = Network
         self.System = System
@@ -50,11 +54,25 @@ final class NativeBridge: NSObject, NativeBridgeExport {
 
     func stop() {
         Browser.stop()
+        Storage.stop()
+        Keychain.stop()
+        Network.stop()
+        System.stop()
+        Notification.stop()
+        Device.stop()
+        Events.stop()
         Runtime.stop()
     }
 
     func prepareForStart() {
         Browser.prepareForStart()
+        Storage.prepareForStart()
+        Keychain.prepareForStart()
+        Network.prepareForStart()
+        System.prepareForStart()
+        Notification.prepareForStart()
+        Device.prepareForStart()
+        Events.prepareForStart()
         Runtime.prepareForStart()
     }
 }
@@ -63,34 +81,79 @@ final class NativeBridge: NSObject, NativeBridgeExport {
 final class NativeBridgeFactory {
     private let logger: Logging
     private let browserManager: BrowserManager
+    private let fileStore: FileStore
+    private let networkClient: NetworkClient
+    private let keychainStore: KeychainStore
+    private let notificationService: NotificationService
+    private let eventBus: EventBus
+    private let deviceInfo: DeviceInformationProviding
 
-    init(logger: Logging, browserManager: BrowserManager) {
+    init(
+        logger: Logging, browserManager: BrowserManager, fileStore: FileStore,
+        networkClient: NetworkClient, keychainStore: KeychainStore,
+        notificationService: NotificationService, eventBus: EventBus,
+        deviceInfo: DeviceInformationProviding
+    ) {
         self.logger = logger
         self.browserManager = browserManager
+        self.fileStore = fileStore
+        self.networkClient = networkClient
+        self.keychainStore = keychainStore
+        self.notificationService = notificationService
+        self.eventBus = eventBus
+        self.deviceInfo = deviceInfo
     }
 
     func makeBridge() -> NativeBridge {
         let limits = JavaScriptModuleLimits()
         let resolver = JavaScriptModuleResolver(limits: limits)
+        let infrastructureLimits = InfrastructureResourceLimits()
+        let runtimeID = UUID().uuidString
+        let runtimeNamespace = RuntimeBridgeNamespace(
+            resolver: resolver,
+            sourceProvider: BundleJavaScriptModuleSourceProvider(
+                bundle: .main, limits: limits
+            ),
+            limits: limits,
+            logger: logger,
+            runtimeID: runtimeID
+        )
         return NativeBridge(
             Browser: BrowserBridgeNamespace(
                 service: BrowserBridgeService(browserManager: browserManager)
             ),
-            Storage: StorageBridgeNamespace(),
+            Storage: InfrastructureBridgeNamespace(
+                service: StorageBridgeService(store: fileStore, limits: infrastructureLimits),
+                runtimeID: runtimeID, limits: infrastructureLimits
+            ),
+            Keychain: InfrastructureBridgeNamespace(
+                service: KeychainBridgeService(store: keychainStore, limits: infrastructureLimits),
+                runtimeID: runtimeID, limits: infrastructureLimits
+            ),
             Logger: LoggerBridgeNamespace(logger: logger),
-            Network: NetworkBridgeNamespace(),
-            System: SystemBridgeNamespace(),
-            Notification: NotificationBridgeNamespace(),
-            Device: DeviceBridgeNamespace(),
-            Events: EventsBridgeNamespace(),
-            Runtime: RuntimeBridgeNamespace(
-                resolver: resolver,
-                sourceProvider: BundleJavaScriptModuleSourceProvider(
-                    bundle: .main, limits: limits
+            Network: InfrastructureBridgeNamespace(
+                service: NetworkBridgeService(client: networkClient, limits: infrastructureLimits),
+                runtimeID: runtimeID, limits: infrastructureLimits
+            ),
+            System: InfrastructureBridgeNamespace(
+                service: SystemInfrastructureBridgeService(limits: infrastructureLimits),
+                runtimeID: runtimeID, limits: infrastructureLimits
+            ),
+            Notification: InfrastructureBridgeNamespace(
+                service: NotificationBridgeService(
+                    notifications: notificationService, limits: infrastructureLimits
                 ),
-                limits: limits,
-                logger: logger
-            )
+                runtimeID: runtimeID, limits: infrastructureLimits
+            ),
+            Device: InfrastructureBridgeNamespace(
+                service: DeviceBridgeService(provider: deviceInfo),
+                runtimeID: runtimeID, limits: infrastructureLimits
+            ),
+            Events: InfrastructureBridgeNamespace(
+                service: EventsBridgeService(eventBus: eventBus),
+                runtimeID: runtimeID, limits: infrastructureLimits
+            ),
+            Runtime: runtimeNamespace
         )
     }
 }

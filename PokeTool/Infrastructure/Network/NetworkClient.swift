@@ -1,6 +1,10 @@
 import Foundation
 
-final class NetworkClient {
+protocol NetworkTransporting {
+    func data(for request: URLRequest) async throws -> (Data, HTTPURLResponse)
+}
+
+final class NetworkClient: NetworkTransporting {
     private let session: URLSession
 
     init(configuration: URLSessionConfiguration = .ephemeral) {
@@ -18,4 +22,3 @@ final class NetworkClient {
         return (data, httpResponse)
     }
 }
-

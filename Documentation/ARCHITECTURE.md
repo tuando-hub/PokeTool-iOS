@@ -1,5 +1,23 @@
 # PokeTool iOS Architecture
 
+## Phase 6: Native Infrastructure Bridge
+
+```text
+JavaScript CommonJS module
+  -> PokeToolRuntime compatibility module
+  -> Native namespace / shared Promise registry
+  -> typed infrastructure bridge service
+  -> injected protocol/native implementation
+```
+
+Storage, Keychain, Network, System, Device, Notification, Events and Logger are
+namespaced and return serializable values only. Runtime stop cancels pending
+operations without deleting persistent state. Storage uses controlled logical
+roots; Network uses system TLS and keeps URLSession cookies separate from browser
+sessions; JavaScript events may only use `js.*`, `runtime.*`, or `plugin.*`.
+See [INFRASTRUCTURE_BRIDGE_API.md](INFRASTRUCTURE_BRIDGE_API.md) and
+[JSBOX_COMPATIBILITY_MAP.md](JSBOX_COMPATIBILITY_MAP.md).
+
 ## Phase 5: JavaScript Runtime Module System
 
 ```text

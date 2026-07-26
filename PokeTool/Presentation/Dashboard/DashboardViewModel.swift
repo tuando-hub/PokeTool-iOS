@@ -92,6 +92,21 @@ final class DashboardViewModel {
             viewState.isHealthy = false
         }
     }
+
+    func runInfrastructureTest() async {
+        guard let runtime = runtimeFactory.makeRuntime() as? JavaScriptRuntime else {
+            viewState.runtimeText = "Infrastructure Test: runtime unavailable"
+            return
+        }
+        viewState.runtimeText = "Infrastructure Test: running..."
+        do {
+            viewState.runtimeText = "Infrastructure Test: \(try await runtime.runDebugInfrastructureHarness())"
+            viewState.isHealthy = true
+        } catch {
+            viewState.runtimeText = "Infrastructure Test failed: \(error.localizedDescription)"
+            viewState.isHealthy = false
+        }
+    }
     #endif
 
     private func render(_ state: AppState) {

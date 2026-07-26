@@ -49,10 +49,12 @@ final class ControlledDownloadDestinationPolicy: DownloadDestinationPolicy {
     }
 }
 
-struct BrowserRedactor {
+struct SensitiveDataRedactor {
     private let sensitiveKeys = [
-        "authorization", "cookie", "set-cookie", "password", "token",
-        "bearer", "otp", "card", "cvv", "pan"
+        "authorization", "proxy-authorization", "cookie", "set-cookie",
+        "password", "passwd", "pass", "token", "access_token", "refresh_token",
+        "bearer", "secret", "otp", "verification_code", "card", "card_number",
+        "cvv", "cvc", "pin", "pan"
     ]
 
     func redact(_ values: [String: String]) -> [String: String] {
@@ -63,3 +65,5 @@ struct BrowserRedactor {
         }
     }
 }
+
+typealias BrowserRedactor = SensitiveDataRedactor

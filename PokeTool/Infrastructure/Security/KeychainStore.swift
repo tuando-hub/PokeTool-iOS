@@ -5,7 +5,13 @@ enum KeychainError: Error {
     case unexpectedStatus(OSStatus)
 }
 
-final class KeychainStore {
+protocol KeychainStoring {
+    func set(_ data: Data, account: String) throws
+    func data(account: String) throws -> Data?
+    func remove(account: String) throws
+}
+
+final class KeychainStore: KeychainStoring {
     private let service = Bundle.main.bundleIdentifier ?? "com.dodinh.poketool"
 
     func set(_ data: Data, account: String) throws {
@@ -50,4 +56,3 @@ final class KeychainStore {
         ]
     }
 }
-

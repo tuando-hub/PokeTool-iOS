@@ -220,7 +220,7 @@ struct InMemoryJavaScriptModuleSourceProvider: JavaScriptModuleSourceProviding {
 @MainActor
 @objcMembers
 final class RuntimeBridgeNamespace: NSObject, RuntimeBridgeNamespaceExport {
-    let runtimeID = UUID().uuidString
+    let runtimeID: String
     let limits: JavaScriptModuleLimits
     private let resolver: JavaScriptModuleResolving
     private let sourceProvider: JavaScriptModuleSourceProviding
@@ -234,8 +234,10 @@ final class RuntimeBridgeNamespace: NSObject, RuntimeBridgeNamespaceExport {
         resolver: JavaScriptModuleResolving,
         sourceProvider: JavaScriptModuleSourceProviding,
         limits: JavaScriptModuleLimits,
-        logger: Logging
+        logger: Logging,
+        runtimeID: String = UUID().uuidString
     ) {
+        self.runtimeID = runtimeID
         self.resolver = resolver
         self.sourceProvider = sourceProvider
         self.limits = limits

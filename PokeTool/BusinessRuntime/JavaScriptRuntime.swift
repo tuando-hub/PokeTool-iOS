@@ -218,6 +218,35 @@ final class JavaScriptRuntime: BusinessRuntime {
         }
         return value
     }
+
+    func runDebugInfrastructureHarness() async throws -> String {
+        _ = try start()
+        defer { stop() }
+        return try await runAsyncTestScript(
+            """
+            const storage = require("/compat/storage-compat");
+            const path = "/temp/debug-infrastructure.json";
+            await storage.set("debug.infrastructure", {ok:true});
+            await storage.writeJSON(path, {source:"debug",ok:true}, {overwrite:true});
+            const result = {
+              stored: await storage.get("debug.infrastructure"),
+              file: await storage.readJSON(path),
+              uuid: await PokeToolRuntime.system.uuid(),
+              device: await PokeToolRuntime.device.info()
+            };
+            let eventPayload = null;
+            const subscription = PokeToolRuntime.events.on("js.debug", value => { eventPayload = value; });
+            await PokeToolRuntime.events.emit("js.debug", {delivered:true});
+            PokeToolRuntime.events.off(subscription);
+            await PokeToolRuntime.system.sleep(20);
+            result.event = eventPayload;
+            await storage.removePath(path);
+            await storage.remove("debug.infrastructure");
+            return result;
+            """,
+            timeout: 10
+        )
+    }
     #endif
 }
 

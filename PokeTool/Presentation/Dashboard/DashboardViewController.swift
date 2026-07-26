@@ -28,6 +28,10 @@ final class DashboardViewController: UIViewController {
         #if DEBUG
         navigationItem.rightBarButtonItems = [
             UIBarButtonItem(
+                title: "Infrastructure", style: .plain,
+                target: self, action: #selector(runInfrastructureTest)
+            ),
+            UIBarButtonItem(
                 title: "Modules", style: .plain,
                 target: self, action: #selector(runModuleInspector)
             ),
@@ -54,6 +58,10 @@ final class DashboardViewController: UIViewController {
 
     @objc private func runModuleInspector() {
         viewModel.runModuleInspector()
+    }
+
+    @objc private func runInfrastructureTest() {
+        Task { @MainActor [weak self] in await self?.viewModel.runInfrastructureTest() }
     }
     #endif
 

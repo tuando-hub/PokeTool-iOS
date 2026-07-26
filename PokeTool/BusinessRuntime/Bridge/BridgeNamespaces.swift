@@ -7,13 +7,9 @@ import JavaScriptCore
     func cancel(_ operationId: String) -> Bool
     func capabilities() -> JSValue
 }
-@objc protocol StorageBridgeNamespaceExport: JSExport {}
-@objc protocol NetworkBridgeNamespaceExport: JSExport {}
-@objc protocol NotificationBridgeNamespaceExport: JSExport {}
-@objc protocol DeviceBridgeNamespaceExport: JSExport {}
-@objc protocol EventsBridgeNamespaceExport: JSExport {}
-
 @objc protocol LoggerBridgeNamespaceExport: JSExport {
+    var version: String { get }
+    func capabilities() -> JSValue
     func log(_ level: String, _ message: String)
     func debug(_ message: String, _ metadata: JSValue?)
     func info(_ message: String, _ metadata: JSValue?)
@@ -21,9 +17,6 @@ import JavaScriptCore
     func error(_ message: String, _ metadata: JSValue?)
 }
 
-@objc protocol SystemBridgeNamespaceExport: JSExport {
-    func appVersion() -> String
-}
 
 @MainActor
 @objcMembers
@@ -165,14 +158,9 @@ final class BrowserBridgeNamespace: NSObject, BrowserBridgeNamespaceExport {
     }
 }
 
-@objcMembers final class StorageBridgeNamespace: NSObject, StorageBridgeNamespaceExport {}
-@objcMembers final class NetworkBridgeNamespace: NSObject, NetworkBridgeNamespaceExport {}
-@objcMembers final class NotificationBridgeNamespace: NSObject, NotificationBridgeNamespaceExport {}
-@objcMembers final class DeviceBridgeNamespace: NSObject, DeviceBridgeNamespaceExport {}
-@objcMembers final class EventsBridgeNamespace: NSObject, EventsBridgeNamespaceExport {}
-
 @objcMembers
 final class LoggerBridgeNamespace: NSObject, LoggerBridgeNamespaceExport {
+    let version = "1.0.0"
     private let logger: Logging
     private let redactor: BrowserRedactor
     private let maximumMessageLength = 4_096
@@ -188,6 +176,17 @@ final class LoggerBridgeNamespace: NSObject, LoggerBridgeNamespaceExport {
     func warning(_ message: String, _ metadata: JSValue?) { write("warning", message, metadata) }
     func error(_ message: String, _ metadata: JSValue?) { write("error", message, metadata) }
 
+    func capabilities() -> JSValue {
+        JSValue(
+            object: [
+                "levels": ["debug", "info", "warning", "error"],
+                "redaction": true,
+                "maximumMessageLength": maximumMessageLength
+            ],
+            in: JSContext.current()
+        )
+    }
+
     private func write(_ level: String, _ message: String, _ metadata: JSValue?) {
         let safeMessage = String(message.prefix(maximumMessageLength))
         let raw = metadata?.toDictionary() as? [String: Any] ?? [:]
@@ -198,12 +197,5 @@ final class LoggerBridgeNamespace: NSObject, LoggerBridgeNamespaceExport {
             LogLevel(rawValue: level.lowercased()) ?? .info,
             category: .runtime, message: safeMessage, metadata: redactor.redact(strings)
         )
-    }
-}
-
-@objcMembers
-final class SystemBridgeNamespace: NSObject, SystemBridgeNamespaceExport {
-    func appVersion() -> String {
-        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0.0.0"
     }
 }
