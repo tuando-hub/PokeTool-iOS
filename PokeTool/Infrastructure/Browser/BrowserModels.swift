@@ -1,6 +1,6 @@
 import Foundation
 
-struct BrowserID: Hashable, Codable, CustomStringConvertible {
+struct BrowserID: Hashable, Codable, CustomStringConvertible, Sendable {
     let rawValue: UUID
 
     init(rawValue: UUID = UUID()) {

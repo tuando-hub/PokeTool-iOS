@@ -29,6 +29,7 @@ final class BrowserSession: NSObject {
     private let eventEmitter: BrowserEventEmitter
     private let logger: Logging
     private let metrics: BrowserMetricsCollector
+    private let operationCoordinator: BrowserOperationCoordinator
     private var progressObservation: NSKeyValueObservation?
     private var titleObservation: NSKeyValueObservation?
     private var loadStartedAt: Date?
@@ -46,7 +47,8 @@ final class BrowserSession: NSObject {
         downloadManager: DownloadManager,
         eventEmitter: BrowserEventEmitter,
         logger: Logging,
-        metrics: BrowserMetricsCollector
+        metrics: BrowserMetricsCollector,
+        operationCoordinator: BrowserOperationCoordinator
     ) {
         self.browserId = browserId
         self.metadata = metadata
@@ -62,6 +64,7 @@ final class BrowserSession: NSObject {
         self.eventEmitter = eventEmitter
         self.logger = logger
         self.metrics = metrics
+        self.operationCoordinator = operationCoordinator
         self.createdAt = Date()
 
         super.init()
@@ -269,6 +272,7 @@ extension BrowserSession: WKNavigationDelegate {
     }
 
     func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
+        operationCoordinator.cancelAll(for: browserId)
         navigationState = .processTerminated
         loadingState = .failed(.webProcessTerminated)
         transition(to: .idle)

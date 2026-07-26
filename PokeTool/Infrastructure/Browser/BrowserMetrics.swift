@@ -16,12 +16,38 @@ struct BrowserEngineMetrics: Equatable {
     let totalSessionsCreated: Int
     let availableMemoryBytes: UInt64
     let sessions: [BrowserSessionMetrics]
+    let operationCount: Int
+    let activeOperationCount: Int
+    let failedOperationCount: Int
+    let cancelledOperationCount: Int
+    let totalOperationDuration: TimeInterval
 }
 
 @MainActor
 final class BrowserMetricsCollector {
     private var sessions: [BrowserID: BrowserSessionMetrics] = [:]
     private(set) var totalSessionsCreated = 0
+    private(set) var operationCount = 0
+    private(set) var activeOperationCount = 0
+    private(set) var failedOperationCount = 0
+    private(set) var cancelledOperationCount = 0
+    private(set) var totalOperationDuration: TimeInterval = 0
+
+    func operationStarted() {
+        operationCount += 1
+        activeOperationCount += 1
+    }
+
+    func operationFinished(duration: TimeInterval, succeeded: Bool) {
+        activeOperationCount = max(0, activeOperationCount - 1)
+        totalOperationDuration += duration
+        if !succeeded { failedOperationCount += 1 }
+    }
+
+    func operationCancelled() {
+        activeOperationCount = max(0, activeOperationCount - 1)
+        cancelledOperationCount += 1
+    }
 
     func sessionCreated(
         browserId: BrowserID,
@@ -63,7 +89,12 @@ final class BrowserMetricsCollector {
             activeSessions: sessions.count,
             totalSessionsCreated: totalSessionsCreated,
             availableMemoryBytes: UInt64(os_proc_available_memory()),
-            sessions: sessions.values.sorted { $0.createdAt < $1.createdAt }
+            sessions: sessions.values.sorted { $0.createdAt < $1.createdAt },
+            operationCount: operationCount,
+            activeOperationCount: activeOperationCount,
+            failedOperationCount: failedOperationCount,
+            cancelledOperationCount: cancelledOperationCount,
+            totalOperationDuration: totalOperationDuration
         )
     }
 }

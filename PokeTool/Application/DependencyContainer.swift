@@ -23,6 +23,17 @@ final class DependencyContainer {
         userAgentManager = UserAgentManager()
 
         let browserEventEmitter = BrowserEventEmitter(eventBus: eventBus)
+        let operationCoordinator = BrowserOperationCoordinator(
+            eventEmitter: browserEventEmitter,
+            metrics: browserMetrics
+        )
+        let javaScriptOperations = BrowserJavaScriptOperations()
+        let navigationOperations = BrowserNavigationOperations()
+        let domOperations = BrowserDOMOperations(javaScript: javaScriptOperations)
+        let elementOperations = BrowserElementOperations(javaScript: javaScriptOperations)
+        let captureOperations = BrowserCaptureOperations(
+            destinations: ControlledScreenshotDestinationPolicy()
+        )
         let browserConfiguration = BrowserEngineConfiguration.default
         let browserPool = BrowserPool(
             maximumSessions: browserConfiguration.maximumConcurrentSessions
@@ -31,7 +42,8 @@ final class DependencyContainer {
             userAgentManager: userAgentManager,
             eventEmitter: browserEventEmitter,
             logger: logger,
-            metrics: browserMetrics
+            metrics: browserMetrics,
+            operationCoordinator: operationCoordinator
         )
         browserManager = BrowserManager(
             pool: browserPool,
@@ -39,7 +51,13 @@ final class DependencyContainer {
             userAgentManager: userAgentManager,
             eventEmitter: browserEventEmitter,
             metrics: browserMetrics,
-            logger: logger
+            logger: logger,
+            coordinator: operationCoordinator,
+            navigationOperations: navigationOperations,
+            javaScriptOperations: javaScriptOperations,
+            domOperations: domOperations,
+            elementOperations: elementOperations,
+            captureOperations: captureOperations
         )
         fileStore = FileStore()
         networkClient = NetworkClient()

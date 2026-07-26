@@ -7,17 +7,20 @@ final class BrowserSessionFactory {
     private let eventEmitter: BrowserEventEmitter
     private let logger: Logging
     private let metrics: BrowserMetricsCollector
+    private let operationCoordinator: BrowserOperationCoordinator
 
     init(
         userAgentManager: UserAgentManager,
         eventEmitter: BrowserEventEmitter,
         logger: Logging,
-        metrics: BrowserMetricsCollector
+        metrics: BrowserMetricsCollector,
+        operationCoordinator: BrowserOperationCoordinator
     ) {
         self.userAgentManager = userAgentManager
         self.eventEmitter = eventEmitter
         self.logger = logger
         self.metrics = metrics
+        self.operationCoordinator = operationCoordinator
     }
 
     func makeSession(
@@ -72,7 +75,8 @@ final class BrowserSessionFactory {
             downloadManager: downloadManager,
             eventEmitter: eventEmitter,
             logger: logger,
-            metrics: metrics
+            metrics: metrics,
+            operationCoordinator: operationCoordinator
         )
     }
 }

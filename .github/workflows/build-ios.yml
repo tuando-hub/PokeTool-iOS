@@ -40,6 +40,18 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             clean build
 
+      - name: Run unit tests
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project PokeTool.xcodeproj \
+            -scheme PokeTool \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination 'platform=iOS Simulator,name=iPhone 16 Pro' \
+            CODE_SIGNING_ALLOWED=NO \
+            test
+
       - name: Archive unsigned application
         run: |
           set -o pipefail

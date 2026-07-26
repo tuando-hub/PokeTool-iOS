@@ -7,6 +7,7 @@
 
 /* Begin PBXFileReference section */
 		A00000000000000000000002 /* PokeTool.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PokeTool.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		B00000000000000000000002 /* PokeToolTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PokeToolTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A00000000000000000000011 /* Debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Debug.xcconfig; sourceTree = "<group>"; };
 		A00000000000000000000012 /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Release.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -30,10 +31,21 @@
 			path = PokeTool;
 			sourceTree = "<group>";
 		};
+		B00000000000000000000010 /* PokeToolTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = PokeToolTests;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		A00000000000000000000004 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = ();
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B00000000000000000000004 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = ();
@@ -46,6 +58,7 @@
 			isa = PBXGroup;
 			children = (
 				A00000000000000000000010 /* PokeTool */,
+				B00000000000000000000010 /* PokeToolTests */,
 				A00000000000000000000013 /* Config */,
 				A00000000000000000000006 /* Products */,
 			);
@@ -55,6 +68,7 @@
 			isa = PBXGroup;
 			children = (
 				A00000000000000000000002 /* PokeTool.app */,
+				B00000000000000000000002 /* PokeToolTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -90,6 +104,27 @@
 			productReference = A00000000000000000000002 /* PokeTool.app */;
 			productType = "com.apple.product-type.application";
 		};
+		B00000000000000000000001 /* PokeToolTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B0000000000000000000000B;
+			buildPhases = (
+				B00000000000000000000003 /* Sources */,
+				B00000000000000000000004 /* Frameworks */,
+				B00000000000000000000007 /* Resources */,
+			);
+			buildRules = ();
+			dependencies = (
+				B00000000000000000000016 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				B00000000000000000000010 /* PokeToolTests */,
+			);
+			name = PokeToolTests;
+			packageProductDependencies = ();
+			productName = PokeToolTests;
+			productReference = B00000000000000000000002 /* PokeToolTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -121,6 +156,7 @@
 			projectRoot = "";
 			targets = (
 				A00000000000000000000001 /* PokeTool */,
+				B00000000000000000000001 /* PokeToolTests */,
 			);
 		};
 /* End PBXProject section */
@@ -132,10 +168,22 @@
 			files = ();
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		B00000000000000000000007 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = ();
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		A00000000000000000000003 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = ();
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B00000000000000000000003 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = ();
@@ -219,6 +267,32 @@
 			};
 			name = Release;
 		};
+		B0000000000000000000000E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.dodinh.poketool.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/PokeTool.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/PokeTool";
+			};
+			name = Debug;
+		};
+		B0000000000000000000000F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.dodinh.poketool.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/PokeTool.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/PokeTool";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -240,7 +314,34 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		B0000000000000000000000B = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B0000000000000000000000E /* Debug */,
+				B0000000000000000000000F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 /* End XCConfigurationList section */
+
+/* Begin PBXContainerItemProxy section */
+		B00000000000000000000015 = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A00000000000000000000008 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A00000000000000000000001;
+			remoteInfo = PokeTool;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXTargetDependency section */
+		B00000000000000000000016 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A00000000000000000000001 /* PokeTool */;
+			targetProxy = B00000000000000000000015;
+		};
+/* End PBXTargetDependency section */
 	};
 	rootObject = A00000000000000000000008 /* Project object */;
 }

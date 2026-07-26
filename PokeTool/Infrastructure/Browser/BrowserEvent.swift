@@ -1,6 +1,11 @@
 import Foundation
 
 enum BrowserEvent {
+    case operationStarted(BrowserID, BrowserOperationID, String)
+    case operationCompleted(BrowserID, BrowserOperationID, String, TimeInterval)
+    case operationFailed(BrowserID, BrowserOperationID, String, BrowserError)
+    case operationTimedOut(BrowserID, BrowserOperationID, String)
+    case operationCancelled(BrowserID, BrowserOperationID, String)
     case created(BrowserID)
     case destroyed(BrowserID)
     case stateChanged(BrowserID, BrowserState)
@@ -20,6 +25,16 @@ enum BrowserEvent {
 
     var platformEvent: PlatformEvent {
         switch self {
+        case .operationStarted(let browserId, let operationId, let name):
+            return operation("browser.operation.started", browserId, operationId, name)
+        case .operationCompleted(let browserId, let operationId, let name, let duration):
+            return operation("browser.operation.completed", browserId, operationId, name, ["duration": String(duration)])
+        case .operationFailed(let browserId, let operationId, let name, let error):
+            return operation("browser.operation.failed", browserId, operationId, name, ["error": errorCategory(error)])
+        case .operationTimedOut(let browserId, let operationId, let name):
+            return operation("browser.operation.timedOut", browserId, operationId, name)
+        case .operationCancelled(let browserId, let operationId, let name):
+            return operation("browser.operation.cancelled", browserId, operationId, name)
         case .created(let id):
             return make("browser.created", id)
         case .destroyed(let id):
@@ -57,6 +72,23 @@ enum BrowserEvent {
         case .webProcessTerminated(let id):
             return make("browser.process.terminated", id)
         }
+    }
+
+    private func operation(
+        _ eventName: String,
+        _ browserId: BrowserID,
+        _ operationId: BrowserOperationID,
+        _ operationName: String,
+        _ extra: [String: String] = [:]
+    ) -> PlatformEvent {
+        make(eventName, browserId, [
+            "operationId": operationId.rawValue.uuidString,
+            "operationName": operationName
+        ].merging(extra) { _, new in new })
+    }
+
+    private func errorCategory(_ error: BrowserError) -> String {
+        String(describing: error).components(separatedBy: "(").first ?? "unknown"
     }
 
     private func make(

@@ -1,5 +1,116 @@
 # PokeTool iOS Architecture
 
+## Phase 2: Native Browser Operations
+
+Phase 2 adds native-only operations; it does not add a JavaScriptCore Browser API
+or change `bootstrap.js`.
+
+```text
+Application / Presentation
+          |
+   BrowserManager             only native entry point
+          |
+ Operation Services          navigation / JS / DOM / element / capture
+          |
+   BrowserSession            validation and lifecycle
+          |
+      WKWebView
+```
+
+`BrowserManager` accepts `BrowserID` and Foundation models, validates the
+session, then delegates to injected MainActor services. BrowserPool stays
+private. Runtime never receives BrowserSession or WKWebView.
+
+### Operations and lifecycle
+
+The native surface covers validated URL/request loading, reload/from-origin,
+stop/back/forward; serializable page JavaScript; page state/HTML/text/snapshot;
+safe CSS queries and controlled element interactions; bounded navigation
+conditions; session cookies and website data; user-agent/viewport state; and
+controlled PNG/JPEG screenshots.
+
+```text
+Created -> Validated -> Running -> Completed / Failed / TimedOut / Cancelled
+                                             |
+                                          CleanedUp
+```
+
+Each context carries operation ID, BrowserID, name, optional correlation ID,
+timestamp, timeout and state. `BrowserOperationCoordinator` races the MainActor
+work against a structured timeout, propagates cancellation, emits events and
+records internal metrics. Destroy/process termination invalidates pending work.
+No main-thread blocking or public callback API is used.
+
+### Serialization, DOM, and interaction
+
+`BrowserValue` recursively permits null, Boolean, integer, finite number, string,
+array and string-keyed object. It rejects arbitrary NSObject, JSValue, UIKit and
+WebKit values. Full script source and full HTML are not logged.
+
+Selectors and arguments use `callAsyncJavaScript(arguments:)`, never raw string
+interpolation. Invalid selector and missing element are distinct errors. Input
+updates use the prototype value setter when available and controlled bubbling
+focus/input/change/blur/click events. No website-specific selector or retry loop
+exists.
+
+### Waiting and readiness
+
+Navigation waits are typed, regex-validated, bounded and cancellable. The current
+short-interval fallback reads session snapshots; an EventBus waiter registry is
+the remaining hardening item. The versioned MutationObserver element waiter is
+not claimed complete yet.
+
+Network-idle is deliberately foundation-only through
+`BrowserNetworkIdleOperating`. A complete implementation must preserve original
+fetch/XHR behavior, prevent wrapper stacking, uninstall on navigation/destroy,
+and cannot observe WebSocket, EventSource, beacon, non-fetch/XHR subresources or
+requests predating injection. Phase 2 never reports false network-idle success.
+
+### Cookie and storage boundaries
+
+Cookies remain isolated in the session data store. There is no implicit
+cross-session sync and values are never logged. Explicit shared
+`HTTPCookieStorage` synchronization remains CookieManager-owned.
+
+`WKWebsiteDataStore` enumerates/removes records and WebKit data types. Individual
+localStorage/sessionStorage keys can only be accessed through page JavaScript;
+they are not mislabeled as native record APIs.
+
+### Files, downloads, uploads, and process recovery
+
+Screenshots use unique app-controlled cache destinations and never expose
+UIImage or accept arbitrary paths. Full-content capture is subject to WebKit
+memory/size limits.
+
+Download state and controlled destination policies are session infrastructure.
+Complete WKDownload delegate/progress integration remains foundation work.
+`BrowserFileSelecting` keeps document-picker UI in Presentation/Application and
+limits Browser Infrastructure to validated selected URLs.
+
+On web-process termination, session state/event/metrics are updated and pending
+operations are invalidated. There is no reload loop. Recovery defaults to
+`none`; modeled `reloadOnce` is not enabled.
+
+### Events, redaction, metrics, and DI
+
+Events contain serializable identifiers, operation names, duration/outcome and
+typed error categories—not WKWebView/UI objects, raw NSError, scripts, HTML,
+cookie values, authorization headers, passwords or form bodies.
+`BrowserRedactor` covers authorization, cookie/set-cookie, password,
+token/bearer, OTP and card keys.
+
+The scene-scoped DependencyContainer injects operation coordinator/services,
+metrics, logger and destination policies. Sessions and WebKit child services
+have explicit create/destroy lifetimes. No singleton, service locator,
+third-party analytics, or third-party dependency was added.
+
+### Phase 2 / Phase 3 boundary
+
+Native.Browser remains empty and `bootstrap.js` exposes no Browser API.
+Business Runtime imports neither UIKit nor WebKit. Promise bridge, legacy JSBox
+business logic, modes, plugins, website automation, stealth, proxy and security
+bypass remain outside Phase 2.
+
 ## Phase 1 scope
 
 Phase 1 implements a native Browser Engine foundation. It does not implement browser automation, website-specific behavior, selectors, runtime evaluation, or a JavaScript-facing Browser API.

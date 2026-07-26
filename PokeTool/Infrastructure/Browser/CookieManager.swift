@@ -1,7 +1,7 @@
 import Foundation
 import WebKit
 
-struct BrowserCookie: Codable, Equatable {
+struct BrowserCookie: Codable, Hashable, Sendable {
     let name: String
     let value: String
     let domain: String
