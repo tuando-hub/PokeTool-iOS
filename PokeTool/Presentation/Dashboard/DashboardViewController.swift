@@ -7,8 +7,10 @@ final class DashboardViewController: UIViewController {
 
     private let titleLabel = UILabel()
     private let subtitleLabel = UILabel()
+    private let statusLabel = UILabel()
     private let runtimeLabel = UILabel()
-    private let statusImageView = UIImageView()
+    private let progressView = UIProgressView(progressViewStyle: .bar)
+    private let metrics = UIStackView()
 
     init(viewModel: DashboardViewModel) {
         self.viewModel = viewModel
@@ -25,13 +27,8 @@ final class DashboardViewController: UIViewController {
         configureUI()
         bind()
         viewModel.start()
-        navigationItem.rightBarButtonItem = UIBarButtonItem(title: "Phone OTP", style: .plain, target: self, action: #selector(openPhoneGateway))
-        navigationItem.leftBarButtonItems = [
-            UIBarButtonItem(title: "RUN", style: .done, target: self, action: #selector(runPokemonTasks)),
-            UIBarButtonItem(title: "JUMP+", style: .done, target: self, action: #selector(runJumpPlusTasks)),
-            UIBarButtonItem(title: "JCS", style: .done, target: self, action: #selector(runJumpCSTasks)),
-            UIBarButtonItem(title: "STOP", style: .plain, target: self, action: #selector(stopPokemonTasks))
-        ]
+        navigationItem.rightBarButtonItem = UIBarButtonItem(image: UIImage(systemName: "gearshape"), style: .plain, target: self, action: #selector(openPhoneGateway))
+        navigationItem.leftBarButtonItem = UIBarButtonItem(title: "Tasks", style: .plain, target: self, action: #selector(runPokemonTasks))
         #if DEBUG
         navigationItem.rightBarButtonItems = [
             UIBarButtonItem(title: "JCS", style: .plain, target: self, action: #selector(runJumpCSSliceTest)),
@@ -166,12 +163,12 @@ final class DashboardViewController: UIViewController {
 
     private func configureUI() {
         title = "Dashboard"
-        view.backgroundColor = .systemBackground
+        view.backgroundColor = AppTheme.background
 
         titleLabel.font = .preferredFont(forTextStyle: .largeTitle)
         titleLabel.adjustsFontForContentSizeCategory = true
 
-        subtitleLabel.font = .preferredFont(forTextStyle: .headline)
+        subtitleLabel.font = .preferredFont(forTextStyle: .subheadline)
         subtitleLabel.textColor = .secondaryLabel
         subtitleLabel.adjustsFontForContentSizeCategory = true
 
@@ -179,24 +176,19 @@ final class DashboardViewController: UIViewController {
         runtimeLabel.numberOfLines = 0
         runtimeLabel.adjustsFontForContentSizeCategory = true
 
-        statusImageView.preferredSymbolConfiguration = UIImage.SymbolConfiguration(pointSize: 28)
-
-        let runtimeRow = UIStackView(arrangedSubviews: [statusImageView, runtimeLabel])
-        runtimeRow.axis = .horizontal
-        runtimeRow.spacing = 12
-        runtimeRow.alignment = .center
-
-        let stack = UIStackView(arrangedSubviews: [titleLabel, subtitleLabel, runtimeRow])
-        stack.axis = .vertical
-        stack.spacing = 16
-        stack.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(stack)
-
-        NSLayoutConstraint.activate([
-            stack.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 32),
-            stack.leadingAnchor.constraint(equalTo: view.layoutMarginsGuide.leadingAnchor),
-            stack.trailingAnchor.constraint(equalTo: view.layoutMarginsGuide.trailingAnchor)
-        ])
+        statusLabel.font = .preferredFont(forTextStyle: .caption1); statusLabel.textAlignment = .center; statusLabel.layer.cornerRadius = 9; statusLabel.clipsToBounds = true
+        progressView.progressTintColor = AppTheme.accent; progressView.trackTintColor = AppTheme.border
+        metrics.axis = .horizontal; metrics.spacing = 8; metrics.distribution = .fillEqually
+        let scroll = UIScrollView(); scroll.translatesAutoresizingMaskIntoConstraints = false
+        let stack = UIStackView(); stack.axis = .vertical; stack.spacing = 16; stack.translatesAutoresizingMaskIntoConstraints = false
+        let header = UIStackView(arrangedSubviews: [titleLabel, subtitleLabel]); header.axis = .vertical; header.spacing = 4
+        let hero = AppTheme.cardView(); let heroStack = UIStackView(arrangedSubviews: [statusLabel, runtimeLabel, progressView]); heroStack.axis = .vertical; heroStack.spacing = 12; heroStack.translatesAutoresizingMaskIntoConstraints = false; hero.addSubview(heroStack)
+        NSLayoutConstraint.activate([heroStack.topAnchor.constraint(equalTo: hero.topAnchor, constant: 16), heroStack.leadingAnchor.constraint(equalTo: hero.leadingAnchor, constant: 16), heroStack.trailingAnchor.constraint(equalTo: hero.trailingAnchor, constant: -16), heroStack.bottomAnchor.constraint(equalTo: hero.bottomAnchor, constant: -16)])
+        ["Total\n12", "Success\n8", "Failed\n1", "Stopped\n0"].forEach { text in let l = UILabel(); l.text = text; l.numberOfLines = 2; l.textAlignment = .center; l.font = .preferredFont(forTextStyle: .headline); let c = AppTheme.cardView(); c.addSubview(l); l.translatesAutoresizingMaskIntoConstraints = false; NSLayoutConstraint.activate([l.topAnchor.constraint(equalTo: c.topAnchor, constant: 12), l.leadingAnchor.constraint(equalTo: c.leadingAnchor, constant: 4), l.trailingAnchor.constraint(equalTo: c.trailingAnchor, constant: -4), l.bottomAnchor.constraint(equalTo: c.bottomAnchor, constant: -12)]); metrics.addArrangedSubview(c) }
+        let current = AppTheme.cardView(); let currentLabel = UILabel(); currentLabel.text = "CURRENT TASK\nJumpCS · DEMO_ACCOUNT_01\nProfile verification  ·  67%\nWaiting for phone OTP"; currentLabel.numberOfLines = 0; currentLabel.font = .preferredFont(forTextStyle: .callout); currentLabel.translatesAutoresizingMaskIntoConstraints = false; current.addSubview(currentLabel); NSLayoutConstraint.activate([currentLabel.topAnchor.constraint(equalTo: current.topAnchor, constant: 16), currentLabel.leadingAnchor.constraint(equalTo: current.leadingAnchor, constant: 16), currentLabel.trailingAnchor.constraint(equalTo: current.trailingAnchor, constant: -16), currentLabel.bottomAnchor.constraint(equalTo: current.bottomAnchor, constant: -16)])
+        let activity = AppTheme.cardView(); let activityLabel = UILabel(); activityLabel.text = "RECENT ACTIVITY\n✓  09:42  Login verified\n●  09:41  Waiting for OTP\n✓  09:40  Gateway connected"; activityLabel.numberOfLines = 0; activityLabel.font = .preferredFont(forTextStyle: .subheadline); activityLabel.translatesAutoresizingMaskIntoConstraints = false; activity.addSubview(activityLabel); NSLayoutConstraint.activate([activityLabel.topAnchor.constraint(equalTo: activity.topAnchor, constant: 16), activityLabel.leadingAnchor.constraint(equalTo: activity.leadingAnchor, constant: 16), activityLabel.trailingAnchor.constraint(equalTo: activity.trailingAnchor, constant: -16), activityLabel.bottomAnchor.constraint(equalTo: activity.bottomAnchor, constant: -16)])
+        [header, hero, metrics, current, activity].forEach { stack.addArrangedSubview($0) }; scroll.addSubview(stack); view.addSubview(scroll)
+        NSLayoutConstraint.activate([scroll.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 16), scroll.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16), scroll.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16), scroll.bottomAnchor.constraint(equalTo: view.bottomAnchor), stack.topAnchor.constraint(equalTo: scroll.contentLayoutGuide.topAnchor), stack.leadingAnchor.constraint(equalTo: scroll.contentLayoutGuide.leadingAnchor), stack.trailingAnchor.constraint(equalTo: scroll.contentLayoutGuide.trailingAnchor), stack.bottomAnchor.constraint(equalTo: scroll.contentLayoutGuide.bottomAnchor), stack.widthAnchor.constraint(equalTo: scroll.frameLayoutGuide.widthAnchor)])
     }
 
     private func bind() {
@@ -206,10 +198,10 @@ final class DashboardViewController: UIViewController {
                 self?.titleLabel.text = state.title
                 self?.subtitleLabel.text = state.subtitle
                 self?.runtimeLabel.text = state.runtimeText
-                self?.statusImageView.image = UIImage(
-                    systemName: state.isHealthy ? "checkmark.circle.fill" : "exclamationmark.circle.fill"
-                )
-                self?.statusImageView.tintColor = state.isHealthy ? .systemGreen : .systemOrange
+                self?.statusLabel.text = state.isHealthy ? "  READY  " : "  ATTENTION  "
+                self?.statusLabel.textColor = state.isHealthy ? AppTheme.success : AppTheme.warning
+                self?.statusLabel.backgroundColor = (state.isHealthy ? AppTheme.success : AppTheme.warning).withAlphaComponent(0.16)
+                self?.progressView.progress = state.isHealthy ? 0.72 : 0.18
             }
             .store(in: &cancellables)
     }
